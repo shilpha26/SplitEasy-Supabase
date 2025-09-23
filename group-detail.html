@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Group Details - SplitEasy</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#28a745">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        /* Enhanced Settlement System CSS */
+        .settlements-header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+        }
+
+        .settlements-header h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .settlements-count {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .settlements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .settlement-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #dc3545;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settlement-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .settlement-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .settlement-from,
+        .settlement-to {
+            display: flex;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        .member-name {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .member-name.debtor {
+            color: #dc3545;
+        }
+
+        .member-name.creditor {
+            color: #28a745;
+        }
+
+        .settlement-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            flex: 1;
+        }
+
+        .arrow-icon {
+            font-size: 1.5rem;
+            color: #6c757d;
+            font-weight: bold;
+        }
+
+        .settlement-amount {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+            background: #f8f9fa;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .settlement-actions {
+            margin-left: 1rem;
+        }
+
+        .settlement-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+
+        .settlement-btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+        }
+
+        .settlement-complete {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-radius: 16px;
+            color: #155724;
+        }
+
+        .settlement-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .settlement-complete h4 {
+            font-size: 1.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #155724;
+        }
+
+        .settlement-complete p {
+            margin: 0;
+            color: #155724;
+            opacity: 0.8;
+        }
+
+        .no-settlements {
+            text-align: center;
+            color: #6c757d;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        /* Fixed Modal Footer Alignment */
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .modal-footer-with-delete {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .modal-footer-left {
+            flex-shrink: 0;
+        }
+
+        .modal-footer-right {
+            display: flex;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .settlement-item {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .settlement-content {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                text-align: center;
+            }
+
+            .settlement-arrow {
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+
+            .arrow-icon {
+                font-size: 1.2rem;
+                transform: rotate(90deg);
+            }
+
+            .settlement-from,
+            .settlement-to {
+                min-width: auto;
+                justify-content: center;
+            }
+
+            .settlement-actions {
+                margin-left: 0;
+            }
+
+            .modal-footer-with-delete {
+                padding: 0.75rem;
+                gap: 0.5rem;
+                flex-wrap: nowrap;
+            }
+
+            .modal-footer-left .btn-danger {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+                min-width: 70px;
+            }
+
+            .modal-footer-right {
+                gap: 0.5rem;
+            }
+
+            .modal-footer-right .btn-secondary,
+            .modal-footer-right .btn-success {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+                min-width: 65px;
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="group-header">
+        <div class="container">
+            <div class="group-header-left">
+                <button class="btn-back" id="backBtn" onclick="goBack()">←</button>
+                <div class="group-info">
+                    <h1 id="groupName">Loading...</h1>
+                    <p id="groupMeta">Loading group details...</p>
+                </div>
+            </div>
+            <div class="group-actions">
+                <button class="btn-secondary" id="shareBtn" onclick="shareGroup()">Share</button>
+                <button class="btn-success" id="editBtn" onclick="editGroup()">Edit</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Total Expenses Card -->
+        <div class="total-expenses">
+            <h2 id="totalExpensesAmount">₹0.00</h2>
+            <p>Total Expenses</p>
+        </div>
+
+        <!-- Expenses Section -->
+        <section class="expenses-section">
+            <div class="section-header">
+                <h3>Expenses</h3>
+                <button class="btn-success" onclick="showAddExpenseModal()">Add Expense</button>
+            </div>
+
+            <div id="expensesList" class="expenses-list">
+                <!-- Expenses will be loaded here -->
+            </div>
+
+            <div id="noExpenses" class="empty-state">
+                <p>No Expenses Yet</p>
+                <p>Add your first expense to start tracking group spending!</p>
+                <button class="btn-success btn-large" onclick="showAddExpenseModal()">Add First Expense</button>
+            </div>
+        </section>
+
+        <!-- Balances Section -->
+        <section class="balances-section">
+            <h3>Balances & Settlements</h3>
+            <div id="balancesList" class="balances-list">
+                <!-- Balances will be calculated and shown here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Expense Modal -->
+    <div id="addExpenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Expense</h3>
+                <span class="close" onclick="closeAddExpenseModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="expenseDescription">Description</label>
+                    <input type="text" id="expenseDescription" placeholder="e.g., Dinner, Gas, Groceries" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseAmount">Amount (₹)</label>
+                    <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="expensePaidBy">Paid By</label>
+                    <select id="expensePaidBy" required>
+                        <option value="">Select who paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Split Between</label>
+                    <div class="selection-container">
+                        <div class="selection-header">
+                            <span>Select Members</span>
+                            <div class="selection-actions">
+                                <button class="selection-action" onclick="selectAllExpenseMembers()">Select All</button>
+                                <button class="selection-action" onclick="clearAllExpenseMembers()">Clear All</button>
+                            </div>
+                        </div>
+                        <div class="selectable-grid" id="expenseSplitGrid">
+                            <!-- Member checkboxes will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeAddExpenseModal()">Cancel</button>
+                <button type="button" class="btn-success" onclick="addExpense()">Add Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Expense Modal -->
+    <div id="editExpenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Expense</h3>
+                <span class="close" onclick="closeEditExpenseModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editExpenseDescription">Description</label>
+                    <input type="text" id="editExpenseDescription" placeholder="e.g., Dinner, Gas, Groceries" required>
+                </div>
+                <div class="form-group">
+                    <label for="editExpenseAmount">Amount (₹)</label>
+                    <input type="number" id="editExpenseAmount" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="editExpensePaidBy">Paid By</label>
+                    <select id="editExpensePaidBy" required>
+                        <option value="">Select who paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Split Between</label>
+                    <div class="selection-container">
+                        <div class="selection-header">
+                            <span>Select Members</span>
+                            <div class="selection-actions">
+                                <button class="selection-action" onclick="selectAllEditExpenseMembers()">Select All</button>
+                                <button class="selection-action" onclick="clearAllEditExpenseMembers()">Clear All</button>
+                            </div>
+                        </div>
+                        <div class="selectable-grid" id="editExpenseSplitGrid">
+                            <!-- Member checkboxes will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeEditExpenseModal()">Cancel</button>
+                <button type="button" class="btn-success" onclick="saveExpenseChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Group Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Share Group</h3>
+                <span class="close" onclick="closeShareModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="shareLink">Share Link</label>
+                    <input type="text" id="shareLink" readonly>
+                    <button type="button" class="btn-success" onclick="copyShareLink()">Copy</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeShareModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Group Modal -->
+    <div id="editGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Group</h3>
+                <span class="close" onclick="closeEditGroupModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editGroupName">Group Name</label>
+                    <input type="text" id="editGroupName" required>
+                </div>
+                <div class="form-group">
+                    <label>Members</label>
+                    <div class="selection-container">
+                        <div class="selection-header">
+                            <span>Edit Members</span>
+                            <div class="selection-actions">
+                                <button class="selection-action" onclick="selectAllGroupMembers()">Select All</button>
+                                <button class="selection-action" onclick="clearAllGroupMembers()">Clear All</button>
+                            </div>
+                        </div>
+                        <div class="selectable-grid" id="editGroupMembersGrid">
+                            <!-- Members will be loaded here -->
+                        </div>
+                        <div class="add-item-section">
+                            <input type="text" class="add-item-input" id="editGroupNewMemberInput" placeholder="Add new member">
+                            <button class="btn-add" onclick="addNewGroupMember()" title="Add member">+</button>
+                        </div>
+                        <div class="dynamic-items" id="editGroupDynamicMembers">
+                            <!-- Dynamically added members will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer-with-delete">
+                <div class="modal-footer-left">
+                    <button type="button" class="btn-danger" onclick="deleteGroupConfirm()">Delete Group</button>
+                </div>
+                <div class="modal-footer-right">
+                    <button type="button" class="btn-secondary" onclick="closeEditGroupModal()">Cancel</button>
+                    <button type="button" class="btn-success" onclick="saveGroupChanges()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification" style="display: none;"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Global variables
+        let currentGroup = null;
+        let currentGroupId = null;
+        let editingExpenseId = null;
+        let dynamicMemberCounter = 0;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentGroupId = urlParams.get('id');
+
+            if (currentGroupId) {
+                loadGroupData(currentGroupId);
+            } else {
+                showNotification('No group ID provided', 'error');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            }
+        });
+
+        function loadGroupData(groupId) {
+            const groups = loadFromLocalStorage();
+            currentGroup = groups.find(g => g.id === groupId);
+
+            if (!currentGroup) {
+                showNotification('Group not found', 'error');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+                return;
+            }
+
+            // Update UI
+            safeUpdateElement('groupName', currentGroup.name);
+            safeUpdateElement('groupMeta', `${currentGroup.members.length} members • ${currentGroup.expenses?.length || 0} expenses • Created ${formatDate(currentGroup.createdAt)}`);
+            safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses || 0));
+
+            displayExpenses();
+            calculateBalances();
+        }
+
+        function safeUpdateElement(id, content) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = content;
+            }
+        }
+
+        function displayExpenses() {
+            const expensesList = document.getElementById('expensesList');
+            const noExpenses = document.getElementById('noExpenses');
+
+            if (!currentGroup.expenses || currentGroup.expenses.length === 0) {
+                if (expensesList) expensesList.style.display = 'none';
+                if (noExpenses) noExpenses.style.display = 'block';
+                return;
+            }
+
+            if (expensesList) expensesList.style.display = 'block';
+            if (noExpenses) noExpenses.style.display = 'none';
+
+            if (expensesList) {
+                expensesList.innerHTML = currentGroup.expenses.map(expense => 
+                    `<div class="expense-item">
+                        <div class="expense-item-header">
+                            <div class="expense-actions">
+                                <button class="expense-action-btn edit" onclick="editExpense('${expense.id}')" title="Edit Expense">
+                                    ✏️
+                                </button>
+                                <button class="expense-action-btn delete" onclick="deleteExpense('${expense.id}')" title="Delete Expense">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                        <div class="expense-content">
+                            <div class="expense-info">
+                                <h4>${expense.name}</h4>
+                                <p>Paid by ${expense.paidBy} • Split between ${expense.splitBetween?.join(', ') || 'Unknown'}</p>
+                                <small>${formatDate(expense.date)}</small>
+                            </div>
+                            <div class="expense-amount">
+                                ${formatCurrency(expense.amount)}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // FIXED: Enhanced Settlement System with Payment Instructions (A → B format)
+        function calculateBalances() {
+            const balancesList = document.getElementById('balancesList');
+            if (!balancesList || !currentGroup.expenses || currentGroup.expenses.length === 0) {
+                if (balancesList) balancesList.innerHTML = '<p class="no-settlements">No expenses to calculate settlements</p>';
+                return;
+            }
+
+            // Calculate individual balances
+            const balances = {};
+            currentGroup.members.forEach(member => balances[member] = 0);
+
+            currentGroup.expenses.forEach(expense => {
+                const amount = parseFloat(expense.amount);
+                const splitBetween = expense.splitBetween || currentGroup.members;
+                const perPerson = amount / splitBetween.length;
+
+                // Person who paid gets credited
+                if (balances[expense.paidBy] !== undefined) {
+                    balances[expense.paidBy] += amount;
+                }
+
+                // Everyone who shared the expense gets debited
+                splitBetween.forEach(member => {
+                    if (balances[member] !== undefined) {
+                        balances[member] -= perPerson;
+                    }
+                });
+            });
+
+            // Get creditors (people who are owed money) and debtors (people who owe money)
+            const creditors = [];
+            const debtors = [];
+
+            Object.entries(balances).forEach(([member, amount]) => {
+                if (Math.abs(amount) > 0.01) { // Ignore very small amounts
+                    if (amount > 0) {
+                        creditors.push({ name: member, amount: amount });
+                    } else {
+                        debtors.push({ name: member, amount: Math.abs(amount) });
+                    }
+                }
+            });
+
+            // Sort creditors and debtors by amount (largest first)
+            creditors.sort((a, b) => b.amount - a.amount);
+            debtors.sort((a, b) => b.amount - a.amount);
+
+            // Calculate optimal settlements using greedy algorithm
+            const settlements = [];
+            let i = 0, j = 0;
+
+            while (i < creditors.length && j < debtors.length) {
+                const creditor = creditors[i];
+                const debtor = debtors[j];
+
+                const settlementAmount = Math.min(creditor.amount, debtor.amount);
+
+                settlements.push({
+                    from: debtor.name,
+                    to: creditor.name,
+                    amount: settlementAmount
+                });
+
+                creditor.amount -= settlementAmount;
+                debtor.amount -= settlementAmount;
+
+                if (creditor.amount < 0.01) i++;
+                if (debtor.amount < 0.01) j++;
+            }
+
+            // Display settlements
+            if (settlements.length === 0) {
+                balancesList.innerHTML = `
+                    <div class="settlement-complete">
+                        <div class="settlement-icon">🎉</div>
+                        <h4>All Settled Up!</h4>
+                        <p>No payments needed - everyone is even!</p>
+                    </div>
+                `;
+            } else {
+                const settlementHTML = settlements.map(settlement => `
+                    <div class="settlement-item">
+                        <div class="settlement-content">
+                            <div class="settlement-from">
+                                <span class="member-name debtor">${settlement.from}</span>
+                            </div>
+                            <div class="settlement-arrow">
+                                <span class="arrow-icon">→</span>
+                                <span class="settlement-amount">${formatCurrency(settlement.amount)}</span>
+                            </div>
+                            <div class="settlement-to">
+                                <span class="member-name creditor">${settlement.to}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                balancesList.innerHTML = `
+                    <div class="settlements-list">
+                        ${settlementHTML}
+                    </div>
+                `;
+            }
+        }
+
+        // Add Expense Functions
+        function showAddExpenseModal() {
+            const modal = document.getElementById('addExpenseModal');
+            const paidBySelect = document.getElementById('expensePaidBy');
+            const splitGrid = document.getElementById('expenseSplitGrid');
+
+            if (modal) modal.style.display = 'block';
+
+            // Populate paid by dropdown
+            if (paidBySelect) {
+                paidBySelect.innerHTML = '<option value="">Select who paid</option>' + 
+                    currentGroup.members.map(member => `<option value="${member}">${member}</option>`).join('');
+            }
+
+            // Populate split between grid
+            if (splitGrid) {
+                splitGrid.innerHTML = currentGroup.members.map(member => `
+                    <div class="selectable-box selected" data-member="${member}">
+                        ${member}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function closeAddExpenseModal() {
+            const modal = document.getElementById('addExpenseModal');
+            if (modal) modal.style.display = 'none';
+
+            // Reset form
+            ['expenseDescription', 'expenseAmount', 'expensePaidBy'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.value = '';
+            });
+        }
+
+        function selectAllExpenseMembers() {
+            document.querySelectorAll('#expenseSplitGrid .selectable-box').forEach(box => {
+                box.classList.add('selected');
+            });
+        }
+
+        function clearAllExpenseMembers() {
+            document.querySelectorAll('#expenseSplitGrid .selectable-box').forEach(box => {
+                box.classList.remove('selected');
+            });
+        }
+
+        function addExpense() {
+            const description = document.getElementById('expenseDescription')?.value.trim();
+            const amount = document.getElementById('expenseAmount')?.value;
+            const paidBy = document.getElementById('expensePaidBy')?.value;
+            const selectedBoxes = document.querySelectorAll('#expenseSplitGrid .selectable-box.selected');
+            const splitBetween = Array.from(selectedBoxes).map(box => box.dataset.member);
+
+            if (!description || !amount || !paidBy || splitBetween.length === 0) {
+                showNotification('Please fill all fields', 'error');
+                return;
+            }
+
+            const newExpense = {
+                id: generateId(),
+                name: description,
+                amount: parseFloat(amount),
+                paidBy: paidBy,
+                splitBetween: splitBetween,
+                date: new Date().toISOString(),
+                perPersonAmount: parseFloat(amount) / splitBetween.length
+            };
+
+            currentGroup.expenses = currentGroup.expenses || [];
+            currentGroup.expenses.push(newExpense);
+            currentGroup.totalExpenses = (currentGroup.totalExpenses || 0) + parseFloat(amount);
+
+            updateGroupInStorage();
+            displayExpenses();
+            calculateBalances();
+            safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses));
+            closeAddExpenseModal();
+            showNotification('Expense added successfully!');
+        }
+
+        // Edit Expense Functions
+        function editExpense(expenseId) {
+            const expense = currentGroup.expenses.find(e => e.id === expenseId);
+            if (!expense) return;
+
+            editingExpenseId = expenseId;
+
+            // Populate form
+            document.getElementById('editExpenseDescription').value = expense.name;
+            document.getElementById('editExpenseAmount').value = expense.amount;
+
+            const paidBySelect = document.getElementById('editExpensePaidBy');
+            paidBySelect.innerHTML = '<option value="">Select who paid</option>' + 
+                currentGroup.members.map(member => 
+                    `<option value="${member}" ${member === expense.paidBy ? 'selected' : ''}>${member}</option>`
+                ).join('');
+
+            // Populate split between grid
+            const splitGrid = document.getElementById('editExpenseSplitGrid');
+            splitGrid.innerHTML = currentGroup.members.map(member => `
+                <div class="selectable-box ${expense.splitBetween?.includes(member) ? 'selected' : ''}" data-member="${member}">
+                    ${member}
+                </div>
+            `).join('');
+
+            document.getElementById('editExpenseModal').style.display = 'block';
+        }
+
+        function closeEditExpenseModal() {
+            document.getElementById('editExpenseModal').style.display = 'none';
+            editingExpenseId = null;
+        }
+
+        function selectAllEditExpenseMembers() {
+            document.querySelectorAll('#editExpenseSplitGrid .selectable-box').forEach(box => {
+                box.classList.add('selected');
+            });
+        }
+
+        function clearAllEditExpenseMembers() {
+            document.querySelectorAll('#editExpenseSplitGrid .selectable-box').forEach(box => {
+                box.classList.remove('selected');
+            });
+        }
+
+        function saveExpenseChanges() {
+            if (!editingExpenseId) return;
+
+            const description = document.getElementById('editExpenseDescription')?.value.trim();
+            const amount = document.getElementById('editExpenseAmount')?.value;
+            const paidBy = document.getElementById('editExpensePaidBy')?.value;
+            const selectedBoxes = document.querySelectorAll('#editExpenseSplitGrid .selectable-box.selected');
+            const splitBetween = Array.from(selectedBoxes).map(box => box.dataset.member);
+
+            if (!description || !amount || !paidBy || splitBetween.length === 0) {
+                showNotification('Please fill all fields', 'error');
+                return;
+            }
+
+            const expenseIndex = currentGroup.expenses.findIndex(e => e.id === editingExpenseId);
+            if (expenseIndex !== -1) {
+                const oldAmount = parseFloat(currentGroup.expenses[expenseIndex].amount);
+                const newAmount = parseFloat(amount);
+
+                currentGroup.expenses[expenseIndex] = {
+                    ...currentGroup.expenses[expenseIndex],
+                    name: description,
+                    amount: newAmount,
+                    paidBy: paidBy,
+                    splitBetween: splitBetween,
+                    perPersonAmount: newAmount / splitBetween.length
+                };
+
+                // Update total
+                currentGroup.totalExpenses = (currentGroup.totalExpenses || 0) - oldAmount + newAmount;
+
+                updateGroupInStorage();
+                displayExpenses();
+                calculateBalances();
+                safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses));
+                closeEditExpenseModal();
+                showNotification('Expense updated successfully!');
+            }
+        }
+
+        function deleteExpense(expenseId) {
+            const expense = currentGroup.expenses.find(e => e.id === expenseId);
+            if (!expense) return;
+
+            if (!confirm(`Are you sure you want to delete the expense "${expense.name}"?`)) return;
+
+            const expenseIndex = currentGroup.expenses.findIndex(e => e.id === expenseId);
+            if (expenseIndex !== -1) {
+                const deletedExpense = currentGroup.expenses[expenseIndex];
+                currentGroup.expenses.splice(expenseIndex, 1);
+                currentGroup.totalExpenses -= parseFloat(deletedExpense.amount);
+
+                updateGroupInStorage();
+                displayExpenses();
+                calculateBalances();
+                safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses));
+                showNotification('Expense deleted successfully');
+            }
+        }
+
+        function updateGroupInStorage() {
+            const groups = loadFromLocalStorage();
+            const groupIndex = groups.findIndex(g => g.id === currentGroupId);
+            if (groupIndex !== -1) {
+                groups[groupIndex] = currentGroup;
+                localStorage.setItem('spliteasy_groups', JSON.stringify(groups));
+            }
+        }
+
+        // Group functions
+        function shareGroup() {
+            const modal = document.getElementById('shareModal');
+            const shareLink = document.getElementById('shareLink');
+            const url = window.location.href;
+
+            if (shareLink) shareLink.value = url;
+            if (modal) modal.style.display = 'block';
+        }
+
+        function copyShareLink() {
+            const shareLink = document.getElementById('shareLink');
+            if (shareLink) {
+                shareLink.select();
+                document.execCommand('copy');
+                showNotification('Link copied to clipboard!');
+            }
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('shareModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function editGroup() {
+            document.getElementById('editGroupName').value = currentGroup.name;
+            setupEditGroupMembers();
+            document.getElementById('editGroupModal').style.display = 'block';
+        }
+
+        function setupEditGroupMembers() {
+            const grid = document.getElementById('editGroupMembersGrid');
+            grid.innerHTML = currentGroup.members.map(member => `
+                <div class="selectable-box selected" data-member="${member}">
+                    ${member}
+                </div>
+            `).join('');
+        }
+
+        function selectAllGroupMembers() {
+            document.querySelectorAll('#editGroupMembersGrid .selectable-box').forEach(box => {
+                box.classList.add('selected');
+            });
+        }
+
+        function clearAllGroupMembers() {
+            document.querySelectorAll('#editGroupMembersGrid .selectable-box').forEach(box => {
+                box.classList.remove('selected');
+            });
+        }
+
+        function addNewGroupMember() {
+            const input = document.getElementById('editGroupNewMemberInput');
+            const memberName = input.value.trim();
+
+            if (!memberName) return;
+
+            // Check for duplicates
+            const existingMembers = Array.from(document.querySelectorAll('#editGroupMembersGrid .selectable-box')).map(box => box.dataset.member);
+            const dynamicMembers = Array.from(document.querySelectorAll('#editGroupDynamicMembers .dynamic-item-name')).map(el => el.textContent);
+
+            if (existingMembers.includes(memberName) || dynamicMembers.includes(memberName)) {
+                showNotification('Member already exists', 'error');
+                return;
+            }
+
+            const dynamicContainer = document.getElementById('editGroupDynamicMembers');
+            const itemId = 'edit_group_member_' + (++dynamicMemberCounter);
+
+            const memberItem = document.createElement('div');
+            memberItem.className = 'dynamic-item';
+            memberItem.id = itemId;
+            memberItem.innerHTML = `
+                <div class="dynamic-item-content">
+                    <span class="dynamic-item-name">${memberName}</span>
+                </div>
+                <div class="dynamic-item-actions">
+                    <button class="icon-btn edit" onclick="editGroupMember('${itemId}')" title="Edit">✏️</button>
+                    <button class="icon-btn delete" onclick="removeGroupMember('${itemId}')" title="Remove">✖️</button>
+                </div>
+            `;
+
+            dynamicContainer.appendChild(memberItem);
+            input.value = '';
+            showNotification('Member added successfully');
+        }
+
+        function editGroupMember(itemId) {
+            const item = document.getElementById(itemId);
+            const nameEl = item.querySelector('.dynamic-item-name');
+            const currentName = nameEl.textContent;
+
+            const newName = prompt('Edit member name:', currentName);
+            if (newName && newName.trim() && newName.trim() !== currentName) {
+                nameEl.textContent = newName.trim();
+                showNotification('Member updated');
+            }
+        }
+
+        function removeGroupMember(itemId) {
+            if (confirm('Remove this member?')) {
+                document.getElementById(itemId).remove();
+                showNotification('Member removed');
+            }
+        }
+
+        function saveGroupChanges() {
+            const groupName = document.getElementById('editGroupName').value.trim();
+            const selectedBoxes = document.querySelectorAll('#editGroupMembersGrid .selectable-box.selected');
+            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+            const dynamicMembers = Array.from(document.querySelectorAll('#editGroupDynamicMembers .dynamic-item-name')).map(el => el.textContent);
+            const allMembers = [...selectedMembers, ...dynamicMembers];
+
+            if (!groupName || allMembers.length < 2) {
+                showNotification('Please provide group name and at least two members', 'error');
+                return;
+            }
+
+            currentGroup.name = groupName;
+            currentGroup.members = allMembers;
+
+            updateGroupInStorage();
+            safeUpdateElement('groupName', groupName);
+            safeUpdateElement('groupMeta', `${allMembers.length} members • ${currentGroup.expenses?.length || 0} expenses • Created ${formatDate(currentGroup.createdAt)}`);
+
+            closeEditGroupModal();
+            showNotification('Group updated successfully!');
+        }
+
+        function closeEditGroupModal() {
+            document.getElementById('editGroupModal').style.display = 'none';
+            document.getElementById('editGroupDynamicMembers').innerHTML = '';
+        }
+
+        function deleteGroupConfirm() {
+            if (confirm('Are you sure you want to delete this group? All expenses will be lost forever!')) {
+                const groups = loadFromLocalStorage().filter(g => g.id !== currentGroupId);
+                localStorage.setItem('spliteasy_groups', JSON.stringify(groups));
+                showNotification('Group deleted successfully');
+                setTimeout(() => window.location.href = 'index.html', 1500);
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // Utility functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 2
+            }).format(amount || 0);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const data = localStorage.getItem('spliteasy_groups');
+                return data ? JSON.parse(data) : [];
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+                return [];
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.style.display = 'block';
+
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Toggle selectable boxes
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('selectable-box')) {
+                e.target.classList.toggle('selected');
+            }
+
+            // Modal close handlers
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        // Enter key for adding members
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.id === 'editGroupNewMemberInput') {
+                addNewGroupMember();
+            }
+        });
+    </script>    
+    <script src="js/shared-utils.js"></script>
+    <script src="js/shared-supabase.js"></script>
+    <script src="js/shared-sync.js"></script>
+</body>
+</html>

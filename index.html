@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SplitEasy - Smart Expense Splitting</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#28a745">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+    <!-- Main App Content -->
+    <div id="mainAppContent">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="logo">
+                    <h1>SplitEasy</h1>
+                    <p>Smart expense splitting made simple</p>
+                </div>
+                <div class="user-info">
+                    <span id="currentUserName">Loading...</span>
+                    <button class="btn-link" onclick="showUserLoginModal()">Change User</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container">
+            <!-- Groups Header -->
+            <div class="groups-header">
+                <div>
+                    <h2>Your Groups</h2>
+                    <p class="group-count" id="groupCount">0 groups</p>
+                </div>
+                <button class="btn-success" onclick="showCreateGroupModal()">Create New Group</button>
+            </div>
+
+            <!-- Groups List -->
+            <div id="groupsList" class="groups-list">
+                <!-- Groups will be loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state">
+                <p>You don't have any groups yet!</p>
+                <button class="btn-success" onclick="showCreateGroupModal()">Create Your First Group</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Group</h3>
+                <span class="close" onclick="closeCreateGroupModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="groupName">Group Name</label>
+                    <input type="text" id="groupName" placeholder="e.g., Weekend Trip, House Expenses" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Group Members</label>
+                    <div class="selection-container">
+                        <div class="selection-header">
+                            <span>Select Members</span>
+                            <div class="selection-actions">
+                                <button class="selection-action" onclick="selectAllMembers()">Select All</button>
+                                <button class="selection-action" onclick="clearAllMembers()">Clear All</button>
+                            </div>
+                        </div>
+
+                        <div class="selectable-grid" id="memberSelectionGrid">
+                            <!-- Current user will be added here -->
+                        </div>
+
+                        <div class="add-item-section">
+                            <input type="text" class="add-item-input" id="newMemberInput" placeholder="Add new member">
+                            <button class="btn-add" onclick="addNewMember()" title="Add member">+</button>
+                        </div>
+
+                        <div class="dynamic-items" id="dynamicMembers">
+                            <!-- Dynamically added members will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeCreateGroupModal()">Cancel</button>
+                <button type="button" class="btn-success" onclick="createGroup()">Create Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Group Modal -->
+    <div id="editGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Group</h3>
+                <span class="close" onclick="closeEditGroupModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editGroupName">Group Name</label>
+                    <input type="text" id="editGroupName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Group Members</label>
+                    <div class="selection-container">
+                        <div class="selection-header">
+                            <span>Edit Members</span>
+                            <div class="selection-actions">
+                                <button class="selection-action" onclick="selectAllEditMembers()">Select All</button>
+                                <button class="selection-action" onclick="clearAllEditMembers()">Clear All</button>
+                            </div>
+                        </div>
+
+                        <div class="selectable-grid" id="editMemberSelectionGrid">
+                            <!-- Members will be loaded here -->
+                        </div>
+
+                        <div class="add-item-section">
+                            <input type="text" class="add-item-input" id="editNewMemberInput" placeholder="Add new member">
+                            <button class="btn-add" onclick="addNewEditMember()" title="Add member">+</button>
+                        </div>
+
+                        <div class="dynamic-items" id="editDynamicMembers">
+                            <!-- Dynamically added members will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeEditGroupModal()">Cancel</button>
+                <button type="button" class="btn-success" onclick="saveGroupChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Login Modal -->
+    <div id="userLoginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Welcome to SplitEasy</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="userName">Your Name</label>
+                    <input type="text" id="userName" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="userIdInput">User ID (Optional)</label>
+                    <input type="text" id="userIdInput" placeholder="Leave blank to generate automatically">
+                    <div class="form-help" id="userIdStatus">Will be generated from your name</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-link" onclick="handleGenerateUserId()">Generate User ID</button>
+                <button type="button" class="btn-success" onclick="createUser()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification" style="display: none;"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Global variables
+        window.groups = [];
+        window.currentUser = null;
+        let dynamicMemberCounter = 0;
+        let editingGroupId = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        async function initializeApp() {
+            console.log('🚀 Initializing SplitEasy...');
+
+            // Check for existing user
+            const userData = localStorage.getItem('spliteasy_current_user');
+            if (userData) {
+                window.currentUser = JSON.parse(userData);
+                document.getElementById('currentUserName').textContent = window.currentUser.name;
+                loadGroups();
+                showMainContent();
+            } else {
+                showUserLoginModal();
+            }
+        }
+
+        function showUserLoginModal() {
+            document.getElementById('userLoginModal').style.display = 'block';
+        }
+
+        function showMainContent() {
+            document.getElementById('userLoginModal').style.display = 'none';
+            document.getElementById('mainAppContent').style.display = 'block';
+        }
+
+        // In index.html, replace the existing generateUserId function:
+        function handleGenerateUserId() {
+            const userName = document.getElementById('userName').value;
+            if (userName) {
+                const userId = generateUserId(userName); // Now calls shared-utils function
+                document.getElementById('userIdInput').value = userId;
+                document.getElementById('userIdStatus').textContent = `Generated: ${userId}`;
+                document.getElementById('userIdStatus').className = 'form-help success';
+            }
+        }
+
+
+        function generateUserIdFromName(name) {
+            const clean = name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 8);
+            const timestamp = Date.now().toString().slice(-4);
+            const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+            return (clean || 'user') + timestamp + random;
+        }
+
+        async function createUser() {
+            const userName = document.getElementById('userName').value.trim();
+            const userId = document.getElementById('userIdInput').value.trim() || generateUserIdFromName(userName);
+
+            if (!userName) {
+                showNotification('Please enter your name', 'error');
+                return;
+            }
+
+            const userData = {
+                id: userId,
+                name: userName,
+                createdAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('spliteasy_current_user', JSON.stringify(userData));
+            window.currentUser = userData;
+            document.getElementById('currentUserName').textContent = userName;
+            showMainContent();
+            loadGroups();
+            showNotification(`Welcome, ${userName}!`);
+        }
+
+        function loadGroups() {
+            window.groups = loadFromLocalStorage();
+            displayGroups();
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const data = localStorage.getItem('spliteasy_groups');
+                return data ? JSON.parse(data) : [];
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+                return [];
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                window.groups.forEach(group => {
+                    if (group.expenses && group.expenses.length > 0) {
+                        group.totalExpenses = group.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+                    } else {
+                        group.totalExpenses = 0;
+                    }
+                });
+
+                localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
+                console.log('💾 Data saved to localStorage');
+            } catch (error) {
+                console.error('❌ Failed to save to localStorage:', error);
+            }
+        }
+
+        function displayGroups() {
+            const groupsList = document.getElementById('groupsList');
+            const emptyState = document.getElementById('emptyState');
+            const groupCount = document.getElementById('groupCount');
+
+            if (window.groups.length === 0) {
+                groupsList.style.display = 'none';
+                emptyState.style.display = 'block';
+                groupCount.textContent = '0 groups';
+                return;
+            }
+
+            groupsList.style.display = 'grid';
+            emptyState.style.display = 'none';
+            groupCount.textContent = `${window.groups.length} group${window.groups.length !== 1 ? 's' : ''}`;
+
+            groupsList.innerHTML = window.groups.map(group => `
+                <div class="group-card">
+                    <div class="group-card-header">
+                        <div class="group-card-actions">
+                            <button class="group-action-btn edit" onclick="editGroup('${group.id}')" title="Edit Group">
+                                ✏️
+                            </button>
+                            <button class="group-action-btn delete" onclick="deleteGroup('${group.id}')" title="Delete Group">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="group-card-content" onclick="openGroup('${group.id}')">
+                        <div class="group-info">
+                            <h3>${group.name}</h3>
+                            <div class="group-meta">
+                                <span>${group.members.length} members</span>
+                                <span>${group.expenses?.length || 0} expenses</span>
+                                <span>Created ${formatDate(group.createdAt)}</span>
+                            </div>
+                        </div>
+                        <div class="group-amount">
+                            ${formatCurrency(group.totalExpenses || 0)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showCreateGroupModal() {
+            document.getElementById('createGroupModal').style.display = 'block';
+            document.getElementById('groupName').value = '';
+            setupMemberSelection();
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('createGroupModal').style.display = 'none';
+            // Clear dynamic members
+            document.getElementById('dynamicMembers').innerHTML = '';
+            dynamicMemberCounter = 0;
+        }
+
+        function setupMemberSelection() {
+            const grid = document.getElementById('memberSelectionGrid');
+            grid.innerHTML = `
+                <div class="selectable-box selected" data-member="${window.currentUser.name}">
+                    ${window.currentUser.name}
+                </div>
+            `;
+        }
+
+        function selectAllMembers() {
+            document.querySelectorAll('#memberSelectionGrid .selectable-box').forEach(box => {
+                box.classList.add('selected');
+            });
+        }
+
+        function clearAllMembers() {
+            document.querySelectorAll('#memberSelectionGrid .selectable-box').forEach(box => {
+                if (box.dataset.member !== window.currentUser.name) {
+                    box.classList.remove('selected');
+                }
+            });
+        }
+
+        function addNewMember() {
+            const input = document.getElementById('newMemberInput');
+            const memberName = input.value.trim();
+
+            if (!memberName) return;
+
+            // Check for duplicates
+            const existingMembers = Array.from(document.querySelectorAll('#memberSelectionGrid .selectable-box')).map(box => box.dataset.member);
+            const dynamicMembers = Array.from(document.querySelectorAll('#dynamicMembers .dynamic-item-name')).map(el => el.textContent);
+
+            if (existingMembers.includes(memberName) || dynamicMembers.includes(memberName)) {
+                showNotification('Member already exists', 'error');
+                return;
+            }
+
+            const dynamicContainer = document.getElementById('dynamicMembers');
+            const itemId = 'member_' + (++dynamicMemberCounter);
+
+            const memberItem = document.createElement('div');
+            memberItem.className = 'dynamic-item';
+            memberItem.id = itemId;
+            memberItem.innerHTML = `
+                <div class="dynamic-item-content">
+                    <span class="dynamic-item-name">${memberName}</span>
+                </div>
+                <div class="dynamic-item-actions">
+                    <button class="icon-btn edit" onclick="editMember('${itemId}')" title="Edit">✏️</button>
+                    <button class="icon-btn delete" onclick="removeMember('${itemId}')" title="Remove">✖️</button>
+                </div>
+            `;
+
+            dynamicContainer.appendChild(memberItem);
+            input.value = '';
+            showNotification('Member added successfully');
+        }
+
+        function editMember(itemId) {
+            const item = document.getElementById(itemId);
+            const nameEl = item.querySelector('.dynamic-item-name');
+            const currentName = nameEl.textContent;
+
+            const newName = prompt('Edit member name:', currentName);
+            if (newName && newName.trim() && newName.trim() !== currentName) {
+                nameEl.textContent = newName.trim();
+                showNotification('Member updated');
+            }
+        }
+
+        function removeMember(itemId) {
+            if (confirm('Remove this member?')) {
+                document.getElementById(itemId).remove();
+                showNotification('Member removed');
+            }
+        }
+
+        function createGroup() {
+            const groupName = document.getElementById('groupName').value.trim();
+
+            // Get selected members from boxes
+            const selectedBoxes = document.querySelectorAll('#memberSelectionGrid .selectable-box.selected');
+            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+
+            // Get dynamic members
+            const dynamicMembers = Array.from(document.querySelectorAll('#dynamicMembers .dynamic-item-name')).map(el => el.textContent);
+
+            const allMembers = [...selectedMembers, ...dynamicMembers];
+
+            if (!groupName) {
+                showNotification('Please enter a group name', 'error');
+                return;
+            }
+
+            if (allMembers.length < 2) {
+                showNotification('Group must have at least two members', 'error');
+                return;
+            }
+
+            const newGroup = {
+                id: generateId(),
+                name: groupName,
+                members: allMembers,
+                expenses: [],
+                totalExpenses: 0,
+                createdAt: new Date().toISOString(),
+                createdBy: window.currentUser.id
+            };
+
+            window.groups.push(newGroup);
+            saveToLocalStorage();
+            displayGroups();
+            closeCreateGroupModal();
+            showNotification(`Group "${groupName}" created successfully!`);
+        }
+
+        // Edit Group Functions
+        function editGroup(groupId) {
+            const group = window.groups.find(g => g.id === groupId);
+            if (!group) return;
+
+            editingGroupId = groupId;
+            document.getElementById('editGroupName').value = group.name;
+            setupEditMemberSelection(group);
+            document.getElementById('editGroupModal').style.display = 'block';
+        }
+
+        function setupEditMemberSelection(group) {
+            const grid = document.getElementById('editMemberSelectionGrid');
+            grid.innerHTML = group.members.map(member => `
+                <div class="selectable-box selected" data-member="${member}">
+                    ${member}
+                </div>
+            `).join('');
+        }
+
+        function selectAllEditMembers() {
+            document.querySelectorAll('#editMemberSelectionGrid .selectable-box').forEach(box => {
+                box.classList.add('selected');
+            });
+        }
+
+        function clearAllEditMembers() {
+            document.querySelectorAll('#editMemberSelectionGrid .selectable-box').forEach(box => {
+                if (box.dataset.member !== window.currentUser.name) {
+                    box.classList.remove('selected');
+                }
+            });
+        }
+
+        function addNewEditMember() {
+            const input = document.getElementById('editNewMemberInput');
+            const memberName = input.value.trim();
+
+            if (!memberName) return;
+
+            // Check for duplicates
+            const existingMembers = Array.from(document.querySelectorAll('#editMemberSelectionGrid .selectable-box')).map(box => box.dataset.member);
+            const dynamicMembers = Array.from(document.querySelectorAll('#editDynamicMembers .dynamic-item-name')).map(el => el.textContent);
+
+            if (existingMembers.includes(memberName) || dynamicMembers.includes(memberName)) {
+                showNotification('Member already exists', 'error');
+                return;
+            }
+
+            const dynamicContainer = document.getElementById('editDynamicMembers');
+            const itemId = 'edit_member_' + (++dynamicMemberCounter);
+
+            const memberItem = document.createElement('div');
+            memberItem.className = 'dynamic-item';
+            memberItem.id = itemId;
+            memberItem.innerHTML = `
+                <div class="dynamic-item-content">
+                    <span class="dynamic-item-name">${memberName}</span>
+                </div>
+                <div class="dynamic-item-actions">
+                    <button class="icon-btn edit" onclick="editMember('${itemId}')" title="Edit">✏️</button>
+                    <button class="icon-btn delete" onclick="removeMember('${itemId}')" title="Remove">✖️</button>
+                </div>
+            `;
+
+            dynamicContainer.appendChild(memberItem);
+            input.value = '';
+            showNotification('Member added successfully');
+        }
+
+        function saveGroupChanges() {
+            if (!editingGroupId) return;
+
+            const groupName = document.getElementById('editGroupName').value.trim();
+
+            // Get selected members from boxes
+            const selectedBoxes = document.querySelectorAll('#editMemberSelectionGrid .selectable-box.selected');
+            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+
+            // Get dynamic members
+            const dynamicMembers = Array.from(document.querySelectorAll('#editDynamicMembers .dynamic-item-name')).map(el => el.textContent);
+
+            const allMembers = [...selectedMembers, ...dynamicMembers];
+
+            if (!groupName) {
+                showNotification('Please enter a group name', 'error');
+                return;
+            }
+
+            if (allMembers.length < 2) {
+                showNotification('Group must have at least two members', 'error');
+                return;
+            }
+
+            const groupIndex = window.groups.findIndex(g => g.id === editingGroupId);
+            if (groupIndex !== -1) {
+                window.groups[groupIndex].name = groupName;
+                window.groups[groupIndex].members = allMembers;
+                saveToLocalStorage();
+                displayGroups();
+                closeEditGroupModal();
+                showNotification('Group updated successfully!');
+            }
+        }
+
+        function closeEditGroupModal() {
+            document.getElementById('editGroupModal').style.display = 'none';
+            document.getElementById('editDynamicMembers').innerHTML = '';
+            editingGroupId = null;
+        }
+
+        function deleteGroup(groupId) {
+            const group = window.groups.find(g => g.id === groupId);
+            if (!group) return;
+
+            if (confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`)) {
+                window.groups = window.groups.filter(g => g.id !== groupId);
+                saveToLocalStorage();
+                displayGroups();
+                showNotification('Group deleted successfully');
+            }
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 2
+            }).format(amount || 0);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function openGroup(groupId) {
+            window.location.href = `group-detail.html?id=${groupId}`;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.style.display = 'block';
+
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Toggle selectable boxes
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('selectable-box')) {
+                // Don't allow deselecting current user
+                if (e.target.dataset.member === window.currentUser.name) return;
+
+                e.target.classList.toggle('selected');
+            }
+
+            // Modal close handlers
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        // Enter key for adding members
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (e.target.id === 'newMemberInput') {
+                    addNewMember();
+                } else if (e.target.id === 'editNewMemberInput') {
+                    addNewEditMember();
+                }
+            }
+        });
+    </script>
+    <script src="js/shared-utils.js"></script>
+    <script src="js/shared-supabase.js"></script>
+    <script src="js/shared-sync.js"></script>
+</body>
+</html>
