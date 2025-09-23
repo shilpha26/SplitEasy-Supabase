@@ -1,72 +1,130 @@
-const CACHE_NAME = 'spliteasy-v1.0';
+const CACHE_VERSION = 'spliteasy-v' + Date.now(); // This creates a unique cache name each time
+const CACHE_NAME = CACHE_VERSION;
+
+console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);
+
+// Updated file list with your new enhanced files
 const urlsToCache = [
   '/',
   '/index.html',
   '/group-detail.html',
   '/css/style.css',
   '/js/script.js',
+  '/js/shared-utils.js',
+  '/js/shared-supabase.js',
+  '/js/shared-sync.js',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js'
 ];
 
-// Install event - cache resources
+// Install event - cache resources and FORCE UPDATE
 self.addEventListener('install', event => {
-  console.log('SplitEasy: Service worker installing...');
+  console.log('✅ SplitEasy: Service worker installing with version:', CACHE_VERSION);
+
+  // FORCE IMMEDIATE ACTIVATION - This is key for getting updates
+  self.skipWaiting();
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('SplitEasy: Caching app shell');
+        console.log('📦 SplitEasy: Caching app shell');
         return cache.addAll(urlsToCache);
       })
       .then(() => {
-        console.log('SplitEasy: App shell cached successfully');
-        return self.skipWaiting();
+        console.log('✅ SplitEasy: App shell cached successfully');
+      })
+      .catch(error => {
+        console.error('❌ SplitEasy: Cache failed:', error);
       })
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches IMMEDIATELY
 self.addEventListener('activate', event => {
-  console.log('SplitEasy: Service worker activating...');
+  console.log('🔄 SplitEasy: Service worker activating...');
+
+  // TAKE CONTROL IMMEDIATELY - Forces immediate update
+  self.clients.claim();
+
   event.waitUntil(
     caches.keys().then(cacheNames => {
+      console.log('🗂️ Found existing caches:', cacheNames);
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('SplitEasy: Deleting old cache:', cacheName);
+            console.log('🗑️ SplitEasy: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('SplitEasy: Service worker activated');
-      return self.clients.claim();
+      console.log('✅ SplitEasy: Service worker activated and old caches cleared');
+
+      // Notify all clients that update is available
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            message: 'App updated! Refresh to see latest changes.'
+          });
+        });
+      });
     })
   );
 });
 
-// Fetch event - serve cached content when offline
+// ENHANCED Fetch event - Network first for HTML, cache for static assets
 self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip external requests
+  // Skip external requests (except our allowed CDNs)
   if (!event.request.url.startsWith(self.location.origin) && 
-      !event.request.url.includes('cdn.jsdelivr.net')) {
+      !event.request.url.includes('cdn.jsdelivr.net') &&
+      !event.request.url.includes('supabase.co')) {
     return;
   }
 
+  const url = event.request.url;
+
+  // NETWORK FIRST for HTML files - ensures latest content
+  if (url.includes('.html') || url.endsWith('/') || url.includes('?id=')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            console.log('🌐 SplitEasy: Serving fresh HTML from network:', event.request.url);
+            // Cache the fresh response
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+            return response;
+          }
+          throw new Error('Network response was not ok');
+        })
+        .catch(() => {
+          console.log('📱 SplitEasy: Network failed, serving from cache:', event.request.url);
+          return caches.match(event.request).then(response => {
+            return response || caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // CACHE FIRST for static assets (JS, CSS, images)
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Return cached version or fetch from network
         if (response) {
-          console.log('SplitEasy: Serving from cache:', event.request.url);
+          console.log('📦 SplitEasy: Serving from cache:', event.request.url);
           return response;
         }
 
-        console.log('SplitEasy: Fetching from network:', event.request.url);
+        console.log('🌐 SplitEasy: Fetching from network:', event.request.url);
         return fetch(event.request).then(response => {
           // Don't cache non-successful responses
           if (!response || response.status !== 200 || response.type !== 'basic') {
@@ -85,7 +143,7 @@ self.addEventListener('fetch', event => {
         });
       })
       .catch(() => {
-        console.log('SplitEasy: Network failed, serving offline page');
+        console.log('❌ SplitEasy: Network failed, serving offline page');
         // Return a custom offline page if available
         if (event.request.destination === 'document') {
           return caches.match('/index.html');
@@ -97,7 +155,7 @@ self.addEventListener('fetch', event => {
 // Handle background sync for offline actions
 self.addEventListener('sync', event => {
   if (event.tag === 'background-sync') {
-    console.log('SplitEasy: Background sync triggered');
+    console.log('🔄 SplitEasy: Background sync triggered');
     event.waitUntil(syncData());
   }
 });
@@ -107,7 +165,7 @@ function syncData() {
   return new Promise((resolve) => {
     // Your app already handles data in localStorage
     // This is just for logging
-    console.log('SplitEasy: Data sync completed');
+    console.log('✅ SplitEasy: Data sync completed');
     resolve();
   });
 }
@@ -129,3 +187,39 @@ self.addEventListener('push', event => {
     );
   }
 });
+
+// ENHANCED: Handle messages from main thread
+self.addEventListener('message', event => {
+  console.log('📢 SplitEasy: Received message:', event.data);
+
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('⚡ SplitEasy: Skipping waiting...');
+    self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    console.log('🧹 SplitEasy: Clearing all caches...');
+    event.waitUntil(
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        console.log('✅ SplitEasy: All caches cleared');
+        if (event.ports[0]) {
+          event.ports[0].postMessage({success: true});
+        }
+      })
+    );
+  }
+
+  if (event.data && event.data.type === 'GET_VERSION') {
+    if (event.ports[0]) {
+      event.ports[0].postMessage({version: CACHE_VERSION});
+    }
+  }
+});
+
+console.log('✅ Enhanced SplitEasy Service Worker loaded successfully with version:', CACHE_VERSION);
