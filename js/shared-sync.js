@@ -416,15 +416,34 @@ async function fetchAllGroupsFromDatabase() {
 
         console.log('Found', groups.length, 'groups in database');
 
-        // Filter groups where user is the creator
-        // Since participants/members column doesn't exist, filter by created_by
-        // In the future, we can also check expenses to see if user is involved
+        // Filter groups where user is the creator OR a member
         const userGroups = groups.filter(group => {
             const createdBy = group[groupSchema.createdBy] || group.created_by;
-            return createdBy === window.currentUser.id;
+            const isCreator = createdBy === window.currentUser.id;
+            
+            // Also check if user is in the members array
+            let isMember = false;
+            const members = group[groupSchema.members] || group.members;
+            if (members) {
+                // Handle JSONB/JSON string format
+                let membersArray = members;
+                if (typeof members === 'string') {
+                    try {
+                        membersArray = JSON.parse(members);
+                    } catch (e) {
+                        membersArray = [];
+                    }
+                }
+                if (Array.isArray(membersArray)) {
+                    isMember = membersArray.includes(window.currentUser.id) || 
+                               membersArray.some(m => m && m.toLowerCase() === window.currentUser.id.toLowerCase());
+                }
+            }
+            
+            return isCreator || isMember;
         });
 
-        console.log('User is a member of', userGroups.length, 'groups (filtered by created_by)');
+        console.log('User is a member of', userGroups.length, 'groups (filtered by created_by or members array)');
 
         // Fetch expenses for each group
         const expenseSchema = SCHEMA_MAPPING.expenses;
@@ -892,10 +911,11 @@ async function syncAllDataToDatabase() {
         localStorage.setItem('lastsynctime', window.splitEasySync.lastSyncTime);
 
         console.log('Complete data sync finished successfully');
-        showNotificationSafe('All data synced to cloud successfully!');
+        // Notification removed for cleaner UI
+        console.log('All data synced to cloud successfully!');
     } catch (error) {
         console.error('Complete data sync failed:', error);
-        showNotificationSafe('Sync failed: ' + error.message, 'error');
+        // Notification removed for cleaner UI - only log errors
     } finally {
         window.splitEasySync.isSyncing = false;
     }
@@ -1015,10 +1035,10 @@ window.startRealtimeSync = function() {
                 console.log('📡 Real-time subscription status:', status);
                 if (status === 'SUBSCRIBED') {
                     console.log('Real-time sync active');
-                    showNotificationSafe('Real-time sync enabled', 'success');
+                    // Notification removed for cleaner UI
                 } else if (status === 'CHANNEL_ERROR') {
                     console.error('Real-time sync error');
-                    showNotificationSafe('Real-time sync error', 'error');
+                    // Notification removed for cleaner UI
                 }
             });
 
@@ -1059,7 +1079,8 @@ async function handleGroupChange(payload) {
                             if (typeof updateGroupDisplay === 'function') {
                                 updateGroupDisplay();
                             }
-                            showNotificationSafe('Group updated by another user', 'info');
+                            // Notification removed for cleaner UI
+                            console.log('Group updated by another user');
                         }
                     }
                 }
@@ -1113,7 +1134,8 @@ async function handleExpenseChange(payload) {
                     }
 
                     const action = eventType === 'INSERT' ? 'added' : eventType === 'DELETE' ? 'deleted' : 'updated';
-                    showNotificationSafe(`Expense ${action} by another user`, 'info');
+                    // Notification removed for cleaner UI
+                    console.log(`Expense ${action} by another user`);
                 }
             }
         }
@@ -1146,21 +1168,25 @@ window.joinUserToGroup = joinUserToGroup;
 // Enhanced sync management functions
 window.forceSyncToDatabase = async function() {
     if (window.splitEasySync.isSyncing) {
-        showNotificationSafe('Sync already in progress...', 'info');
+        // Notification removed for cleaner UI
+        console.log('Sync already in progress...');
         return;
     }
 
     if (window.splitEasySync.isOffline || !window.supabaseClient) {
-        showNotificationSafe('Cannot sync - you are offline', 'error');
+        // Only log offline errors, don't show notification for cleaner UI
+        console.warn('Cannot sync - you are offline');
         return;
     }
 
     if (!window.currentUser) {
-        showNotificationSafe('Please log in to sync data', 'error');
+        // Only log login errors, don't show notification for cleaner UI
+        console.warn('Please log in to sync data');
         return;
     }
 
-    showNotificationSafe('Starting sync with schema detection...', 'info');
+        // Notification removed for cleaner UI
+        console.log('Starting sync with schema detection...');
     await syncAllDataToDatabase();
 };
 
