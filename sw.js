@@ -1,4 +1,5 @@
-const CACHE_VERSION = 'spliteasy-v' + Date.now(); // This creates a unique cache name each time
+// Force cache update by incrementing version
+const CACHE_VERSION = 'spliteasy-v1768221000000'; // Fixed group update to use existing UUID instead of creating new group
 const CACHE_NAME = CACHE_VERSION;
 
 console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);

@@ -31,24 +31,22 @@ let SCHEMA_MAPPING = {
         updatedAt: 'updated_at'     // Try updated_at first
     },
     groups: {
-        id: 'id',
+        id: 'id',  // UUID type in database
         name: 'name',
         createdBy: 'created_by',
         updatedBy: 'updated_by',
-        members: 'members',
-        participants: 'participants',
-        totalExpenses: 'total_expenses',
-        expenseCount: 'expense_count',
+        members: 'members',  // JSONB array
         createdAt: 'created_at',
         updatedAt: 'updated_at'
+        // NO: total_expenses, participants (computed from expenses)
     },
     expenses: {
-        id: 'id',
+        id: 'id',  // UUID type in database
         groupId: 'group_id',
         description: 'description',
         amount: 'amount',
         paidBy: 'paid_by',
-        splitBetween: 'split_between',
+        splitBetween: 'split_between',  // JSONB array
         createdBy: 'created_by',
         createdAt: 'created_at',
         updatedAt: 'updated_at',
@@ -85,6 +83,9 @@ async function detectDatabaseSchema() {
                 { table: 'groups', column: 'created_by', mapping: 'createdBy' },
                 { table: 'groups', column: 'createdat', mapping: 'createdAt' },
                 { table: 'groups', column: 'created_at', mapping: 'createdAt' },
+                { table: 'groups', column: 'members', mapping: 'members' },
+                { table: 'groups', column: 'updated_by', mapping: 'updatedBy' },
+                { table: 'groups', column: 'updated_at', mapping: 'updatedAt' },
 
                 // Test expenses table  
                 { table: 'expenses', column: 'groupid', mapping: 'groupId' },
@@ -192,24 +193,66 @@ async function syncGroupToDatabase(group) {
         console.log('Syncing group to database:', group.name);
 
         const groupSchema = SCHEMA_MAPPING.groups;
+        
+        // Generate UUID for Supabase (database expects UUID, not string ID)
+        // Store mapping: group.supabaseId = UUID, group.id = local string ID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        // Determine the Supabase ID for this group
+        // Priority: 1) group.supabaseId, 2) group.id (if it's a UUID), 3) generate new UUID
+        let supabaseId = group.supabaseId;
+        
+        // If no supabaseId, check if group.id is already a UUID (from Supabase)
+        if (!supabaseId && group.id) {
+            // Check if group.id is a UUID format (8-4-4-4-12 hex characters)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (uuidRegex.test(group.id)) {
+                // group.id is already a UUID from Supabase, use it
+                supabaseId = group.id;
+                console.log('Using existing UUID from group.id:', supabaseId);
+            } else {
+                // group.id is a local string ID, generate new UUID
+                supabaseId = generateUUID();
+                console.log('Generated new UUID for group:', supabaseId);
+            }
+        } else if (!supabaseId) {
+            // No ID at all, generate new UUID
+            supabaseId = generateUUID();
+            console.log('Generated new UUID for group (no existing ID):', supabaseId);
+        }
+        
+        // Store supabaseId for future syncs
+        if (!group.supabaseId) {
+            group.supabaseId = supabaseId;
+        }
+        
+        console.log('Syncing group with supabaseId:', supabaseId, 'group.id:', group.id);
+        
+        // Build group record with all available columns
         const groupRecord = {
-            [groupSchema.id]: group.id,
+            [groupSchema.id]: supabaseId, // Use UUID for Supabase
             [groupSchema.name]: group.name,
             [groupSchema.createdBy]: group.createdBy || window.currentUser.id,
             [groupSchema.updatedBy]: window.currentUser.id,
-            [groupSchema.members]: Array.isArray(group.members) ? group.members : [window.currentUser.id],
-            [groupSchema.participants]: Array.isArray(group.members) ? group.members : [window.currentUser.id],
-            [groupSchema.totalExpenses]: group.totalExpenses || 0,
-            [groupSchema.expenseCount]: group.expenses?.length || 0,
+            [groupSchema.members]: Array.isArray(group.members) ? group.members : [],
             [groupSchema.createdAt]: group.createdAt || new Date().toISOString(),
             [groupSchema.updatedAt]: new Date().toISOString()
         };
+        
+        // Note: total_expenses, participants are computed from expenses
 
         console.log('Group record structure:', groupRecord);
+        console.log('Members being saved:', groupRecord[groupSchema.members]);
 
         const { data, error } = await window.supabaseClient
             .from('groups')
-            .upsert(groupRecord)
+            .upsert(groupRecord, { onConflict: 'id' })
             .select()
             .single();
 
@@ -243,16 +286,41 @@ async function syncExpenseToDatabase(expense, groupId) {
     await detectDatabaseSchema();
 
     try {
-        console.log('Syncing expense to database:', expense.name);
+        console.log('Syncing expense to database:', expense.name || expense.description);
 
         const expenseSchema = SCHEMA_MAPPING.expenses;
+        
+        // Generate UUID for expense if needed (database expects UUID)
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        const supabaseExpenseId = expense.supabaseId || generateUUID();
+        if (!expense.supabaseId) {
+            expense.supabaseId = supabaseExpenseId;
+        }
+        
+        // Get group's Supabase ID (UUID) if available
+        let supabaseGroupId = groupId;
+        if (window.groups && Array.isArray(window.groups)) {
+            const group = window.groups.find(g => g.id === groupId || g.supabaseId === groupId);
+            if (group && group.supabaseId) {
+                supabaseGroupId = group.supabaseId;
+            }
+        }
+        
+        // Build expense record with all available columns
         const expenseRecord = {
-            [expenseSchema.id]: expense.id,
-            [expenseSchema.groupId]: groupId,
-            [expenseSchema.description]: expense.name,
+            [expenseSchema.id]: supabaseExpenseId,
+            [expenseSchema.groupId]: supabaseGroupId,
+            [expenseSchema.description]: expense.name || expense.description,
             [expenseSchema.amount]: parseFloat(expense.amount),
             [expenseSchema.paidBy]: expense.paidBy || 'unknown',
-            [expenseSchema.splitBetween]: expense.splitBetween || [],
+            [expenseSchema.splitBetween]: Array.isArray(expense.splitBetween) ? expense.splitBetween : [],
             [expenseSchema.createdBy]: window.currentUser.id,
             [expenseSchema.createdAt]: expense.date || new Date().toISOString(),
             [expenseSchema.updatedAt]: new Date().toISOString(),
@@ -322,13 +390,15 @@ async function fetchAllGroupsFromDatabase() {
 
         console.log('Found', groups.length, 'groups in database');
 
-        // Filter groups where user is a member (check members array)
+        // Filter groups where user is the creator
+        // Since participants/members column doesn't exist, filter by created_by
+        // In the future, we can also check expenses to see if user is involved
         const userGroups = groups.filter(group => {
-            const members = group[groupSchema.members] || group[groupSchema.participants] || group.members || [];
-            return Array.isArray(members) && members.includes(window.currentUser.id);
+            const createdBy = group[groupSchema.createdBy] || group.created_by;
+            return createdBy === window.currentUser.id;
         });
 
-        console.log('User is a member of', userGroups.length, 'groups');
+        console.log('User is a member of', userGroups.length, 'groups (filtered by created_by)');
 
         // Fetch expenses for each group
         const expenseSchema = SCHEMA_MAPPING.expenses;
@@ -345,10 +415,58 @@ async function fetchAllGroupsFromDatabase() {
                 }
 
                 // Structure the group data properly
+                // Derive members from stored members OR from expenses (fallback)
+                let members = [];
+                
+                // Try to get members from database (handle JSONB)
+                if (groupSchema.members && group[groupSchema.members] !== undefined && group[groupSchema.members] !== null) {
+                    members = group[groupSchema.members];
+                } else if (group.members !== undefined && group.members !== null) {
+                    members = group.members;
+                }
+                
+                // Handle JSONB/JSON string format
+                if (typeof members === 'string') {
+                    try {
+                        members = JSON.parse(members);
+                    } catch (e) {
+                        console.warn('Failed to parse members JSON:', e);
+                        members = [];
+                    }
+                }
+                
+                // Ensure it's an array
+                if (!Array.isArray(members)) {
+                    members = [];
+                }
+                
+                // Fallback: derive members from expenses if still empty
+                if (members.length === 0 && expenses && expenses.length > 0) {
+                    console.log('Members not found in group, deriving from expenses...');
+                    const memberSet = new Set();
+                    expenses.forEach(expense => {
+                        if (expense[expenseSchema.paidBy] || expense.paid_by) {
+                            memberSet.add(expense[expenseSchema.paidBy] || expense.paid_by);
+                        }
+                        const splitBetween = expense[expenseSchema.splitBetween] || expense.split_between || [];
+                        if (Array.isArray(splitBetween)) {
+                            splitBetween.forEach(m => memberSet.add(m));
+                        }
+                    });
+                    members = Array.from(memberSet);
+                    console.log('Derived members from expenses:', members);
+                }
+                
+                console.log('Final members for group:', group[groupSchema.name] || group.name, ':', members);
+                
+                // Store the Supabase ID for future updates
+                const supabaseId = group[groupSchema.id] || group.id;
+                
                 const completeGroup = {
-                    id: group[groupSchema.id] || group.id,
+                    id: supabaseId, // Use Supabase UUID as the ID
+                    supabaseId: supabaseId, // Also store as supabaseId for sync
                     name: group[groupSchema.name] || group.name,
-                    members: group[groupSchema.members] || group[groupSchema.participants] || [],
+                    members: members,
                     expenses: expenses ? expenses.map(expense => ({
                         id: expense[expenseSchema.id] || expense.id,
                         name: expense[expenseSchema.description] || expense.description || expense.name,
@@ -439,10 +557,58 @@ async function fetchGroupFromDatabase(groupId) {
         }
 
         // Structure the group data properly with schema mapping
+        // Derive members from stored members OR from expenses (fallback)
+        let members = [];
+        
+        // Try to get members from database (handle JSONB)
+        if (groupSchema.members && group[groupSchema.members] !== undefined && group[groupSchema.members] !== null) {
+            members = group[groupSchema.members];
+        } else if (group.members !== undefined && group.members !== null) {
+            members = group.members;
+        }
+        
+        // Handle JSONB/JSON string format
+        if (typeof members === 'string') {
+            try {
+                members = JSON.parse(members);
+            } catch (e) {
+                console.warn('Failed to parse members JSON:', e);
+                members = [];
+            }
+        }
+        
+        // Ensure it's an array
+        if (!Array.isArray(members)) {
+            members = [];
+        }
+        
+        // Fallback: derive members from expenses if still empty
+        if (members.length === 0 && expenses && expenses.length > 0) {
+            console.log('Members not found in group, deriving from expenses...');
+            const memberSet = new Set();
+            expenses.forEach(expense => {
+                if (expense[expenseSchema.paidBy] || expense.paid_by) {
+                    memberSet.add(expense[expenseSchema.paidBy] || expense.paid_by);
+                }
+                const splitBetween = expense[expenseSchema.splitBetween] || expense.split_between || [];
+                if (Array.isArray(splitBetween)) {
+                    splitBetween.forEach(m => memberSet.add(m));
+                }
+            });
+            members = Array.from(memberSet);
+            console.log('Derived members from expenses:', members);
+        }
+        
+        console.log('Final members for group:', group[groupSchema.name] || group.name, ':', members);
+        
+        // Store the Supabase ID for future updates
+        const supabaseId = group[groupSchema.id] || group.id;
+        
         const completeGroup = {
-            id: group[groupSchema.id] || group.id,
+            id: supabaseId, // Use Supabase UUID as the ID
+            supabaseId: supabaseId, // Also store as supabaseId for sync
             name: group[groupSchema.name] || group.name,
-            members: group[groupSchema.members] || group[groupSchema.participants] || [],
+            members: members,
             expenses: expenses ? expenses.map(expense => ({
                 id: expense[expenseSchema.id] || expense.id,
                 name: expense[expenseSchema.description] || expense.description || expense.name,
@@ -739,7 +905,7 @@ async function joinUserToGroup(groupId, userId) {
         }
 
         // Get current members
-        const currentMembers = group[groupSchema.members] || group[groupSchema.participants] || [];
+        const currentMembers = group[groupSchema.participants] || group.participants || [];
         
         // Add user if not already a member
         if (!currentMembers.includes(userId)) {
@@ -749,7 +915,6 @@ async function joinUserToGroup(groupId, userId) {
             const { error: updateError } = await window.supabaseClient
                 .from('groups')
                 .update({
-                    [groupSchema.members]: updatedMembers,
                     [groupSchema.participants]: updatedMembers,
                     [groupSchema.updatedAt]: new Date().toISOString()
                 })
@@ -803,7 +968,7 @@ window.startRealtimeSync = function() {
                     // Check if user is a member of this group
                     const groupData = payload.new || payload.old;
                     const groupSchema = SCHEMA_MAPPING.groups;
-                    const members = groupData?.[groupSchema.members] || groupData?.[groupSchema.participants] || [];
+                    const members = groupData?.[groupSchema.participants] || groupData?.participants || [];
                     if (Array.isArray(members) && members.includes(window.currentUser.id)) {
                         await handleGroupChange(payload);
                     }

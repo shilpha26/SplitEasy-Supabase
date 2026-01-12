@@ -6,17 +6,40 @@ console.log('Loading enhanced SplitEasy Supabase integration...');
 // ========================================
 // Configuration is loaded from js/config.js (gitignored)
 // If config.js doesn't exist, Supabase features will be disabled
-let SUPABASECONFIG = null;
+// Always read from window.SUPABASECONFIG directly to avoid timing issues
 
-// Configuration is loaded from js/config.js (loaded before this script)
-if (typeof SUPABASECONFIG === 'undefined' || SUPABASECONFIG === null) {
-    console.warn('Supabase config not found. Supabase features will be disabled.');
-    console.warn('Please create js/config.js from js/config.example.js and add your credentials.');
-    // Create a dummy config to prevent errors
-    SUPABASECONFIG = {
-        url: '',
-        anonKey: ''
-    };
+// Function to get the current config (always reads from window)
+function getSupabaseConfig() {
+    if (typeof window !== 'undefined' && window.SUPABASECONFIG) {
+        if (window.SUPABASECONFIG.url && window.SUPABASECONFIG.anonKey) {
+            return window.SUPABASECONFIG;
+        }
+    }
+    return null;
+}
+
+// Check config on load
+// Use var to allow redeclaration (in case script loads multiple times or cache issues)
+// var allows redeclaration, so this is safe even if cached version had let/const
+var SUPABASECONFIG = getSupabaseConfig();
+
+if (SUPABASECONFIG) {
+    console.log('✅ Supabase config loaded from window.SUPABASECONFIG');
+} else {
+    console.warn('⚠️ Supabase config not found. Supabase features will be disabled.');
+    console.warn('📝 Please create js/config.js with your Supabase credentials.');
+    console.warn('Debug: window.SUPABASECONFIG =', typeof window !== 'undefined' ? window.SUPABASECONFIG : 'window not available');
+    
+    // Try again after a short delay in case config.js loads asynchronously
+    setTimeout(function() {
+        var delayedConfig = getSupabaseConfig();
+        if (delayedConfig) {
+            SUPABASECONFIG = delayedConfig;
+            console.log('✅ Supabase config loaded after delay');
+        } else {
+            console.error('❌ Config still not found after delay');
+        }
+    }, 200);
 }
 
 // Global Supabase variables
@@ -51,13 +74,17 @@ window.initializeSupabase = function() {
     }
 
     try {
+        // Always get fresh config from window (in case it was set after script load)
+        var currentConfig = getSupabaseConfig();
+        
         // Check if config is valid
-        if (!SUPABASECONFIG || !SUPABASECONFIG.url || !SUPABASECONFIG.anonKey || 
-            SUPABASECONFIG.url === '' || SUPABASECONFIG.anonKey === '' ||
-            SUPABASECONFIG.url === 'YOUR_SUPABASE_URL_HERE' || 
-            SUPABASECONFIG.anonKey === 'YOUR_SUPABASE_ANON_KEY_HERE') {
+        if (!currentConfig || !currentConfig.url || !currentConfig.anonKey || 
+            currentConfig.url === '' || currentConfig.anonKey === '' ||
+            currentConfig.url === 'YOUR_SUPABASE_URL_HERE' || 
+            currentConfig.anonKey === 'YOUR_SUPABASE_ANON_KEY_HERE') {
             console.warn('Invalid Supabase configuration. Please check js/config.js');
             console.warn('Copy js/config.example.js to js/config.js and add your credentials.');
+            console.warn('Debug: currentConfig =', currentConfig);
             isOffline = true;
             return false;
         }
@@ -65,8 +92,8 @@ window.initializeSupabase = function() {
         console.log('Initializing Supabase connection...');
 
         window.supabaseClient = window.supabase.createClient(
-            SUPABASECONFIG.url, 
-            SUPABASECONFIG.anonKey,
+            currentConfig.url, 
+            currentConfig.anonKey,
             {
                 auth: {
                     persistSession: false, // We handle our own user management
