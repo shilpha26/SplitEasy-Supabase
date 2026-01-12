@@ -1,5 +1,5 @@
 // shared-sync-database-fixed.js - Schema-Aware Sync System
-console.log('🔧 Loading database schema-aware SplitEasy sync system...');
+console.log('Loading database schema-aware SplitEasy sync system...');
 
 // ========================================
 // GLOBAL VARIABLES & CONFIGURATION
@@ -56,59 +56,74 @@ let SCHEMA_MAPPING = {
     }
 };
 
-// Auto-detect database schema
+// Optimized schema detection with caching
+let schemaDetectionPromise = null;
 async function detectDatabaseSchema() {
+    // Return cached promise if already detecting
+    if (schemaDetectionPromise) {
+        return schemaDetectionPromise;
+    }
+
     if (window.splitEasySync.schemaChecked || !window.supabaseClient) {
-        return;
+        return Promise.resolve();
     }
 
-    console.log('🔍 Detecting database schema...');
+    console.log('Detecting database schema...');
 
-    try {
-        // Try different column name variations for users table
-        const testQueries = [
-            // Test createdat vs created_at
-            { table: 'users', column: 'createdat', mapping: 'createdAt' },
-            { table: 'users', column: 'created_at', mapping: 'createdAt' },
-            { table: 'users', column: 'updatedat', mapping: 'updatedAt' },
-            { table: 'users', column: 'updated_at', mapping: 'updatedAt' },
+    schemaDetectionPromise = (async () => {
+        try {
+            // Try different column name variations for users table
+            const testQueries = [
+                // Test createdat vs created_at
+                { table: 'users', column: 'createdat', mapping: 'createdAt' },
+                { table: 'users', column: 'created_at', mapping: 'createdAt' },
+                { table: 'users', column: 'updatedat', mapping: 'updatedAt' },
+                { table: 'users', column: 'updated_at', mapping: 'updatedAt' },
 
-            // Test groups table
-            { table: 'groups', column: 'createdby', mapping: 'createdBy' },
-            { table: 'groups', column: 'created_by', mapping: 'createdBy' },
-            { table: 'groups', column: 'createdat', mapping: 'createdAt' },
-            { table: 'groups', column: 'created_at', mapping: 'createdAt' },
+                // Test groups table
+                { table: 'groups', column: 'createdby', mapping: 'createdBy' },
+                { table: 'groups', column: 'created_by', mapping: 'createdBy' },
+                { table: 'groups', column: 'createdat', mapping: 'createdAt' },
+                { table: 'groups', column: 'created_at', mapping: 'createdAt' },
 
-            // Test expenses table  
-            { table: 'expenses', column: 'groupid', mapping: 'groupId' },
-            { table: 'expenses', column: 'group_id', mapping: 'groupId' },
-            { table: 'expenses', column: 'paidby', mapping: 'paidBy' },
-            { table: 'expenses', column: 'paid_by', mapping: 'paidBy' }
-        ];
+                // Test expenses table  
+                { table: 'expenses', column: 'groupid', mapping: 'groupId' },
+                { table: 'expenses', column: 'group_id', mapping: 'groupId' },
+                { table: 'expenses', column: 'paidby', mapping: 'paidBy' },
+                { table: 'expenses', column: 'paid_by', mapping: 'paidBy' }
+            ];
 
-        for (const test of testQueries) {
-            try {
-                const { error } = await window.supabaseClient
-                    .from(test.table)
-                    .select(test.column)
-                    .limit(1);
+            // Run queries in parallel for better performance
+            const queryPromises = testQueries.map(async (test) => {
+                try {
+                    const { error } = await window.supabaseClient
+                        .from(test.table)
+                        .select(test.column)
+                        .limit(1);
 
-                if (!error) {
-                    SCHEMA_MAPPING[test.table][test.mapping] = test.column;
-                    console.log(`✅ Schema: ${test.table}.${test.mapping} = ${test.column}`);
+                    if (!error) {
+                        SCHEMA_MAPPING[test.table][test.mapping] = test.column;
+                        console.log(`Schema detected: ${test.table}.${test.mapping} = ${test.column}`);
+                    }
+                } catch (e) {
+                    // Column doesn't exist, try next variation
                 }
-            } catch (e) {
-                // Column doesn't exist, try next variation
-            }
+            });
+
+            await Promise.all(queryPromises);
+
+            window.splitEasySync.schemaChecked = true;
+            console.log('Database schema detection complete');
+            console.log('Final schema mapping:', SCHEMA_MAPPING);
+
+        } catch (error) {
+            console.warn('Schema detection failed:', error);
+        } finally {
+            schemaDetectionPromise = null;
         }
+    })();
 
-        window.splitEasySync.schemaChecked = true;
-        console.log('✅ Database schema detection complete');
-        console.log('📋 Final schema mapping:', SCHEMA_MAPPING);
-
-    } catch (error) {
-        console.warn('⚠️ Schema detection failed:', error);
-    }
+    return schemaDetectionPromise;
 }
 
 // ========================================
@@ -118,7 +133,7 @@ async function detectDatabaseSchema() {
 // FIXED: Schema-aware user sync
 async function syncUserToDatabase(userData) {
     if (window.splitEasySync.isOffline || !window.supabaseClient) {
-        console.log('📴 Skipping user sync - offline or no client');
+        console.log('Skipping user sync - offline or no client');
         return null;
     }
 
@@ -126,7 +141,7 @@ async function syncUserToDatabase(userData) {
     await detectDatabaseSchema();
 
     try {
-        console.log('👤 Syncing user to database:', userData.name);
+        console.log('Syncing user to database:', userData.name);
 
         const userSchema = SCHEMA_MAPPING.users;
         const userRecord = {
@@ -136,7 +151,7 @@ async function syncUserToDatabase(userData) {
             [userSchema.updatedAt]: new Date().toISOString()
         };
 
-        console.log('📊 User record structure:', userRecord);
+        console.log('User record structure:', userRecord);
 
         const { data, error } = await window.supabaseClient
             .from('users')
@@ -145,15 +160,15 @@ async function syncUserToDatabase(userData) {
             .single();
 
         if (error) {
-            console.error('❌ User sync error details:', error);
+            console.error('User sync error details:', error);
             throw error;
         }
 
-        console.log('✅ User synced successfully:', data);
+        console.log('User synced successfully:', data);
         return data;
     } catch (error) {
-        console.error('❌ Failed to sync user:', error);
-        console.error('🔍 Error details:', {
+        console.error('Failed to sync user:', error);
+        console.error('Error details:', {
             message: error.message,
             code: error.code,
             details: error.details,
@@ -166,7 +181,7 @@ async function syncUserToDatabase(userData) {
 // FIXED: Schema-aware group sync
 async function syncGroupToDatabase(group) {
     if (window.splitEasySync.isOffline || !window.supabaseClient || !window.currentUser) {
-        console.log('📴 Skipping group sync - offline, no client, or no user');
+        console.log('Skipping group sync - offline, no client, or no user');
         return null;
     }
 
@@ -174,7 +189,7 @@ async function syncGroupToDatabase(group) {
     await detectDatabaseSchema();
 
     try {
-        console.log('👥 Syncing group to database:', group.name);
+        console.log('Syncing group to database:', group.name);
 
         const groupSchema = SCHEMA_MAPPING.groups;
         const groupRecord = {
@@ -190,7 +205,7 @@ async function syncGroupToDatabase(group) {
             [groupSchema.updatedAt]: new Date().toISOString()
         };
 
-        console.log('📊 Group record structure:', groupRecord);
+        console.log('Group record structure:', groupRecord);
 
         const { data, error } = await window.supabaseClient
             .from('groups')
@@ -199,15 +214,15 @@ async function syncGroupToDatabase(group) {
             .single();
 
         if (error) {
-            console.error('❌ Group sync error details:', error);
+            console.error('Group sync error details:', error);
             throw error;
         }
 
-        console.log('✅ Group synced successfully:', data);
+        console.log('Group synced successfully:', data);
         return data;
     } catch (error) {
-        console.error('❌ Failed to sync group:', error);
-        console.error('🔍 Error details:', {
+        console.error('Failed to sync group:', error);
+        console.error('Error details:', {
             message: error.message,
             code: error.code,
             details: error.details,
@@ -220,7 +235,7 @@ async function syncGroupToDatabase(group) {
 // FIXED: Schema-aware expense sync
 async function syncExpenseToDatabase(expense, groupId) {
     if (window.splitEasySync.isOffline || !window.supabaseClient || !window.currentUser) {
-        console.log('📴 Skipping expense sync - offline, no client, or no user');
+        console.log('Skipping expense sync - offline, no client, or no user');
         return null;
     }
 
@@ -228,7 +243,7 @@ async function syncExpenseToDatabase(expense, groupId) {
     await detectDatabaseSchema();
 
     try {
-        console.log('💰 Syncing expense to database:', expense.name);
+        console.log('Syncing expense to database:', expense.name);
 
         const expenseSchema = SCHEMA_MAPPING.expenses;
         const expenseRecord = {
@@ -244,7 +259,7 @@ async function syncExpenseToDatabase(expense, groupId) {
             [expenseSchema.perPersonAmount]: expense.perPersonAmount || (parseFloat(expense.amount) / (expense.splitBetween?.length || 1))
         };
 
-        console.log('📊 Expense record structure:', expenseRecord);
+        console.log('Expense record structure:', expenseRecord);
 
         const { data, error } = await window.supabaseClient
             .from('expenses')
@@ -253,15 +268,15 @@ async function syncExpenseToDatabase(expense, groupId) {
             .single();
 
         if (error) {
-            console.error('❌ Expense sync error details:', error);
+            console.error('Expense sync error details:', error);
             throw error;
         }
 
-        console.log('✅ Expense synced successfully:', data);
+        console.log('Expense synced successfully:', data);
         return data;
     } catch (error) {
-        console.error('❌ Failed to sync expense:', error);
-        console.error('🔍 Error details:', {
+        console.error('Failed to sync expense:', error);
+        console.error('Error details:', {
             message: error.message,
             code: error.code,
             details: error.details,
@@ -273,7 +288,7 @@ async function syncExpenseToDatabase(expense, groupId) {
 
 // FIXED: Schema-aware group fetching
 async function fetchGroupFromDatabase(groupId) {
-    console.log('🔍 fetchGroupFromDatabase called with ID:', groupId);
+    console.log('fetchGroupFromDatabase called with ID:', groupId);
 
     if (!groupId) {
         throw new Error('Group ID is required');
@@ -287,7 +302,7 @@ async function fetchGroupFromDatabase(groupId) {
     await detectDatabaseSchema();
 
     try {
-        console.log('🔄 Fetching group from database:', groupId);
+        console.log('Fetching group from database:', groupId);
 
         const groupSchema = SCHEMA_MAPPING.groups;
 
@@ -299,16 +314,16 @@ async function fetchGroupFromDatabase(groupId) {
             .single();
 
         if (groupError) {
-            console.error('❌ Group fetch error:', groupError);
+            console.error('Group fetch error:', groupError);
             throw groupError;
         }
 
         if (!group) {
-            console.warn('⚠️ Group not found in database:', groupId);
+            console.warn('Group not found in database:', groupId);
             return null;
         }
 
-        console.log('📋 Group found:', group[groupSchema.name] || group.name);
+        console.log('Group found:', group[groupSchema.name] || group.name);
 
         // Fetch expenses for this group
         const expenseSchema = SCHEMA_MAPPING.expenses;
@@ -319,7 +334,7 @@ async function fetchGroupFromDatabase(groupId) {
             .order(expenseSchema.createdAt, { ascending: false });
 
         if (expensesError) {
-            console.warn('⚠️ Failed to fetch expenses:', expensesError);
+            console.warn('Failed to fetch expenses:', expensesError);
             // Continue without expenses rather than failing
         }
 
@@ -347,12 +362,12 @@ async function fetchGroupFromDatabase(groupId) {
             completeGroup.totalExpenses = completeGroup.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
         }
 
-        console.log('✅ Complete group data assembled:', completeGroup.name, 'with', completeGroup.expenses.length, 'expenses');
+        console.log('Complete group data assembled:', completeGroup.name, 'with', completeGroup.expenses.length, 'expenses');
         return completeGroup;
 
     } catch (error) {
-        console.error('❌ Failed to fetch group from database:', error);
-        console.error('🔍 Error details:', {
+        console.error('Failed to fetch group from database:', error);
+        console.error('Error details:', {
             message: error.message,
             code: error.code,
             details: error.details,
@@ -364,14 +379,14 @@ async function fetchGroupFromDatabase(groupId) {
 
 // FIXED: Schema-aware expense deletion
 async function deleteExpenseFromDatabase(expenseId) {
-    console.log('🗑️ deleteExpenseFromDatabase called with ID:', expenseId);
+    console.log('deleteExpenseFromDatabase called with ID:', expenseId);
 
     if (!expenseId) {
         throw new Error('Expense ID is required for deletion');
     }
 
     if (window.splitEasySync.isOffline) {
-        console.log('📴 Offline - queuing expense deletion for later sync');
+        console.log('Offline - queuing expense deletion for later sync');
         let deleteQueue = JSON.parse(localStorage.getItem('spliteasy_delete_queue') || '[]');
         deleteQueue.push({ type: 'expense', id: expenseId, timestamp: Date.now() });
         localStorage.setItem('spliteasy_delete_queue', JSON.stringify(deleteQueue));
@@ -386,7 +401,7 @@ async function deleteExpenseFromDatabase(expenseId) {
     await detectDatabaseSchema();
 
     try {
-        console.log('🔥 Attempting to delete expense from database:', expenseId);
+        console.log('Attempting to delete expense from database:', expenseId);
 
         const expenseSchema = SCHEMA_MAPPING.expenses;
 
@@ -397,21 +412,21 @@ async function deleteExpenseFromDatabase(expenseId) {
             .select();
 
         if (deleteError) {
-            console.error('❌ Supabase delete error:', deleteError);
+            console.error('Supabase delete error:', deleteError);
             throw deleteError;
         }
 
         if (!data || data.length === 0) {
-            console.warn('⚠️ No records deleted - expense might not exist in database');
+            console.warn('No records deleted - expense might not exist in database');
             return;
         }
 
-        console.log('✅ Expense deleted from database successfully:', data.length, 'records');
+        console.log('Expense deleted from database successfully:', data.length, 'records');
         cleanupDeleteQueue('expense', expenseId);
 
     } catch (error) {
-        console.error('❌ Failed to delete expense from database:', error);
-        console.error('🔍 Error details:', {
+        console.error('Failed to delete expense from database:', error);
+        console.error('Error details:', {
             message: error.message,
             code: error.code,
             details: error.details,
@@ -423,14 +438,14 @@ async function deleteExpenseFromDatabase(expenseId) {
 
 // FIXED: Schema-aware group deletion
 async function deleteGroupFromDatabase(groupId) {
-    console.log('🗑️ deleteGroupFromDatabase called with ID:', groupId);
+    console.log('deleteGroupFromDatabase called with ID:', groupId);
 
     if (!groupId) {
         throw new Error('Group ID is required for deletion');
     }
 
     if (window.splitEasySync.isOffline) {
-        console.log('📴 Offline - queuing group deletion for later sync');
+        console.log('Offline - queuing group deletion for later sync');
         let deleteQueue = JSON.parse(localStorage.getItem('spliteasy_delete_queue') || '[]');
         deleteQueue.push({ type: 'group', id: groupId, timestamp: Date.now() });
         localStorage.setItem('spliteasy_delete_queue', JSON.stringify(deleteQueue));
@@ -445,7 +460,7 @@ async function deleteGroupFromDatabase(groupId) {
     await detectDatabaseSchema();
 
     try {
-        console.log('🔥 Deleting group from database:', groupId);
+        console.log('Deleting group from database:', groupId);
 
         const groupSchema = SCHEMA_MAPPING.groups;
         const expenseSchema = SCHEMA_MAPPING.expenses;
@@ -457,9 +472,9 @@ async function deleteGroupFromDatabase(groupId) {
             .eq(expenseSchema.groupId, groupId);
 
         if (expenseError) {
-            console.warn('⚠️ Failed to delete group expenses:', expenseError);
+            console.warn('Failed to delete group expenses:', expenseError);
         } else {
-            console.log('✅ Group expenses deleted');
+            console.log('Group expenses deleted');
         }
 
         // Then delete group
@@ -473,12 +488,12 @@ async function deleteGroupFromDatabase(groupId) {
             throw groupError;
         }
 
-        console.log('✅ Group deleted from database successfully');
+        console.log('Group deleted from database successfully');
         cleanupDeleteQueue('group', groupId);
 
     } catch (error) {
-        console.error('❌ Failed to delete group from database:', error);
-        console.error('🔍 Error details:', {
+        console.error('Failed to delete group from database:', error);
+        console.error('Error details:', {
             message: error.message,
             code: error.code,
             details: error.details,
@@ -498,7 +513,7 @@ function cleanupDeleteQueue(type, id) {
         let deleteQueue = JSON.parse(localStorage.getItem('spliteasy_delete_queue') || '[]');
         deleteQueue = deleteQueue.filter(item => !(item.type === type && item.id === id));
         localStorage.setItem('spliteasy_delete_queue', JSON.stringify(deleteQueue));
-        console.log('🧹 Cleaned up delete queue for', type, id);
+        console.log('Cleaned up delete queue for', type, id);
     } catch (error) {
         console.warn('Failed to clean up delete queue:', error);
     }
@@ -510,7 +525,7 @@ function loadFromLocalStorageSafe() {
         const data = localStorage.getItem('spliteasy_groups');
         return data ? JSON.parse(data) : [];
     } catch (error) {
-        console.error('❌ Error loading from localStorage:', error);
+        console.error('Error loading from localStorage:', error);
         return [];
     }
 }
@@ -527,9 +542,9 @@ function saveGroupsToLocalStorageSafe(groups) {
         });
 
         localStorage.setItem('spliteasy_groups', JSON.stringify(groups));
-        console.log('💾 Groups saved to localStorage:', groups.length, 'groups');
+        console.log('Groups saved to localStorage:', groups.length, 'groups');
     } catch (error) {
-        console.error('❌ Failed to save to localStorage:', error);
+        console.error('Failed to save to localStorage:', error);
     }
 }
 
@@ -537,19 +552,19 @@ function showNotificationSafe(message, type = 'success') {
     if (typeof showNotification === 'function') {
         showNotification(message, type);
     } else {
-        console.log(`📢 Notification: ${message} (${type})`);
+        console.log(`Notification: ${message} (${type})`);
     }
 }
 
 // Sync all data to database
 async function syncAllDataToDatabase() {
     if (window.splitEasySync.isSyncing || window.splitEasySync.isOffline || !window.supabaseClient || !window.currentUser) {
-        console.log('⚠️ Cannot sync - already syncing, offline, no client, or no user');
+        console.log('Cannot sync - already syncing, offline, no client, or no user');
         return;
     }
 
     window.splitEasySync.isSyncing = true;
-    console.log('🔄 Starting complete data sync with schema detection...');
+    console.log('Starting complete data sync with schema detection...');
 
     try {
         // First, detect database schema
@@ -562,13 +577,13 @@ async function syncAllDataToDatabase() {
         const localGroups = loadFromLocalStorageSafe();
 
         if (localGroups.length === 0) {
-            console.log('📭 No groups to sync');
+            console.log('No groups to sync');
             return;
         }
 
         // Sync all groups
         for (const group of localGroups) {
-            console.log('🔄 Syncing group:', group.name);
+            console.log('Syncing group:', group.name);
 
             await syncGroupToDatabase(group);
 
@@ -584,10 +599,10 @@ async function syncAllDataToDatabase() {
         window.splitEasySync.lastSyncTime = new Date().toISOString();
         localStorage.setItem('lastsynctime', window.splitEasySync.lastSyncTime);
 
-        console.log('✅ Complete data sync finished successfully!');
+        console.log('Complete data sync finished successfully');
         showNotificationSafe('All data synced to cloud successfully!');
     } catch (error) {
-        console.error('❌ Complete data sync failed:', error);
+        console.error('Complete data sync failed:', error);
         showNotificationSafe('Sync failed: ' + error.message, 'error');
     } finally {
         window.splitEasySync.isSyncing = false;
@@ -598,6 +613,233 @@ async function syncAllDataToDatabase() {
 // GLOBAL FUNCTION EXPORTS
 // ========================================
 
+// Join user to a group
+async function joinUserToGroup(groupId, userId) {
+    console.log('Joining user to group:', { groupId, userId });
+
+    if (!window.supabaseClient || !groupId || !userId) {
+        console.warn('Cannot join group - missing client, groupId, or userId');
+        return false;
+    }
+
+    try {
+        await detectDatabaseSchema();
+        const groupSchema = SCHEMA_MAPPING.groups;
+
+        // Fetch current group
+        const { data: group, error: fetchError } = await window.supabaseClient
+            .from('groups')
+            .select('*')
+            .eq(groupSchema.id, groupId)
+            .single();
+
+        if (fetchError || !group) {
+            console.error('Failed to fetch group:', fetchError);
+            return false;
+        }
+
+        // Get current members
+        const currentMembers = group[groupSchema.members] || group[groupSchema.participants] || [];
+        
+        // Add user if not already a member
+        if (!currentMembers.includes(userId)) {
+            const updatedMembers = [...currentMembers, userId];
+
+            // Update group with new member
+            const { error: updateError } = await window.supabaseClient
+                .from('groups')
+                .update({
+                    [groupSchema.members]: updatedMembers,
+                    [groupSchema.participants]: updatedMembers,
+                    [groupSchema.updatedAt]: new Date().toISOString()
+                })
+                .eq(groupSchema.id, groupId);
+
+            if (updateError) {
+                console.error('Failed to update group members:', updateError);
+                return false;
+            }
+
+            console.log('User joined group successfully');
+            return true;
+        } else {
+            console.log('User is already a member of this group');
+            return true;
+        }
+    } catch (error) {
+        console.error('Failed to join group:', error);
+        return false;
+    }
+}
+
+// Start real-time synchronization
+window.startRealtimeSync = function() {
+    if (!window.supabaseClient || !window.currentUser) {
+        console.log('Cannot start real-time sync - missing client or user');
+        return;
+    }
+
+    // Don't start multiple subscriptions
+    if (window.splitEasySync.realtimeSubscription) {
+        console.log('Real-time sync already active');
+        return;
+    }
+
+    console.log('Starting real-time synchronization...');
+
+    try {
+        // Subscribe to all groups and expenses changes
+        // We'll filter in the handler to only process relevant changes
+        const groupsChannel = window.supabaseClient
+            .channel('spliteasy-realtime')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'groups'
+                },
+                async (payload) => {
+                    console.log('Group changed:', payload);
+                    // Check if user is a member of this group
+                    const groupData = payload.new || payload.old;
+                    const groupSchema = SCHEMA_MAPPING.groups;
+                    const members = groupData?.[groupSchema.members] || groupData?.[groupSchema.participants] || [];
+                    if (Array.isArray(members) && members.includes(window.currentUser.id)) {
+                        await handleGroupChange(payload);
+                    }
+                }
+            )
+            .on('postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'expenses'
+                },
+                async (payload) => {
+                    console.log('Expense changed:', payload);
+                    await handleExpenseChange(payload);
+                }
+            )
+            .subscribe((status) => {
+                console.log('📡 Real-time subscription status:', status);
+                if (status === 'SUBSCRIBED') {
+                    console.log('Real-time sync active');
+                    showNotificationSafe('Real-time sync enabled', 'success');
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('Real-time sync error');
+                    showNotificationSafe('Real-time sync error', 'error');
+                }
+            });
+
+        window.splitEasySync.realtimeSubscription = groupsChannel;
+
+    } catch (error) {
+        console.error('Failed to start real-time sync:', error);
+    }
+};
+
+// Handle group changes from real-time sync
+async function handleGroupChange(payload) {
+    try {
+        const { eventType, new: newData, old: oldData } = payload;
+
+        if (eventType === 'UPDATE' || eventType === 'INSERT') {
+            const groupId = newData.id || newData[SCHEMA_MAPPING.groups.id];
+            
+            // Reload the group if it's currently open
+            if (window.currentGroupId === groupId || (window.currentGroup && window.currentGroup.id === groupId)) {
+                console.log('Reloading current group due to real-time update');
+                
+                // Fetch updated group from database
+                if (typeof fetchGroupFromDatabase === 'function') {
+                    const updatedGroup = await fetchGroupFromDatabase(groupId);
+                    if (updatedGroup) {
+                        // Update local storage
+                        const localGroups = loadFromLocalStorageSafe();
+                        const groupIndex = localGroups.findIndex(g => g.id === groupId);
+                        if (groupIndex !== -1) {
+                            localGroups[groupIndex] = updatedGroup;
+                            saveGroupsToLocalStorageSafe(localGroups);
+                        }
+
+                        // Update current group if it's open
+                        if (window.currentGroup && window.currentGroup.id === groupId) {
+                            window.currentGroup = updatedGroup;
+                            if (typeof updateGroupDisplay === 'function') {
+                                updateGroupDisplay();
+                            }
+                            showNotificationSafe('Group updated by another user', 'info');
+                        }
+                    }
+                }
+            } else {
+                // Update groups list if on main page
+                if (typeof loadGroups === 'function') {
+                    loadGroups();
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error handling group change:', error);
+    }
+}
+
+// Handle expense changes from real-time sync
+async function handleExpenseChange(payload) {
+    try {
+        const { eventType, new: newData, old: oldData } = payload;
+        const expenseSchema = SCHEMA_MAPPING.expenses;
+        const groupId = newData?.[expenseSchema.groupId] || newData?.group_id || oldData?.[expenseSchema.groupId] || oldData?.group_id;
+
+        if (!groupId) return;
+
+        // Only update if this expense belongs to a group we're viewing
+        if (window.currentGroupId === groupId || (window.currentGroup && window.currentGroup.id === groupId)) {
+            console.log('Reloading expenses due to real-time update');
+
+            // Fetch updated group from database
+            if (typeof fetchGroupFromDatabase === 'function') {
+                const updatedGroup = await fetchGroupFromDatabase(groupId);
+                if (updatedGroup && window.currentGroup) {
+                    // Update expenses
+                    window.currentGroup.expenses = updatedGroup.expenses;
+                    window.currentGroup.totalExpenses = updatedGroup.totalExpenses;
+
+                    // Update local storage
+                    const localGroups = loadFromLocalStorageSafe();
+                    const groupIndex = localGroups.findIndex(g => g.id === groupId);
+                    if (groupIndex !== -1) {
+                        localGroups[groupIndex] = window.currentGroup;
+                        saveGroupsToLocalStorageSafe(localGroups);
+                    }
+
+                    // Update UI
+                    if (typeof updateGroupDisplay === 'function') {
+                        updateGroupDisplay();
+                    } else if (typeof displayExpenses === 'function' && typeof calculateBalances === 'function') {
+                        displayExpenses();
+                        calculateBalances();
+                    }
+
+                    const action = eventType === 'INSERT' ? 'added' : eventType === 'DELETE' ? 'deleted' : 'updated';
+                    showNotificationSafe(`Expense ${action} by another user`, 'info');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error handling expense change:', error);
+    }
+}
+
+// Stop real-time sync
+window.stopRealtimeSync = function() {
+    if (window.splitEasySync.realtimeSubscription) {
+        window.supabaseClient.removeChannel(window.splitEasySync.realtimeSubscription);
+        window.splitEasySync.realtimeSubscription = null;
+        console.log('🛑 Real-time sync stopped');
+    }
+};
+
 // Make all functions globally available
 window.fetchGroupFromDatabase = fetchGroupFromDatabase;
 window.deleteExpenseFromDatabase = deleteExpenseFromDatabase;
@@ -607,6 +849,7 @@ window.syncGroupToDatabase = syncGroupToDatabase;
 window.syncUserToDatabase = syncUserToDatabase;
 window.syncAllDataToDatabase = syncAllDataToDatabase;
 window.detectDatabaseSchema = detectDatabaseSchema;
+window.joinUserToGroup = joinUserToGroup;
 
 // Enhanced sync management functions
 window.forceSyncToDatabase = async function() {
@@ -656,4 +899,4 @@ window.debugSync = function() {
     };
 };
 
-console.log('✅ Database schema-aware SplitEasy sync system loaded successfully');
+console.log('Database schema-aware SplitEasy sync system loaded successfully');

@@ -39,8 +39,9 @@
         <!-- Expenses Section -->
         <section class="expenses-section">
             <div class="section-header">
-                <h3>Expenses</h3>
-                <button class="btn-success" onclick="showAddExpenseModal()">Add Expense</button>
+                <div class="section-header-actions">
+                    <button class="btn-success" onclick="showAddExpenseModal()">Add Expense</button>
+                </div>
             </div>
             <div id="expensesList" class="expenses-list">
                 <!-- Expenses will be loaded here -->
@@ -54,12 +55,60 @@
 
         <!-- Balances Section -->
         <section class="balances-section">
-            <h3>Balances & Settlements</h3>
+            <div class="balances-header">
+                <h3>Settlements needed</h3>
+            </div>
             <div id="balancesList" class="balances-list">
-                <!-- Balances will be calculated and shown here -->
+                <!-- Settlements will be calculated and shown here -->
+            </div>
+            <div class="show-details-container">
+                <button class="btn-success" onclick="showDetailsView()">Show details</button>
             </div>
         </section>
+
     </main>
+
+    <!-- Details View (Tabbed Interface) -->
+    <div id="detailsView" class="details-view" style="display: none;">
+        <div class="container">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" id="balancesTab" onclick="switchTab('balances')">Lending / Borrowing</button>
+                <button class="tab-btn" id="expensesTab" onclick="switchTab('expenses')">Expense</button>
+            </div>
+
+            <!-- Balances Tab Content -->
+            <div id="balancesTabContent" class="tab-content active">
+                <div id="detailsIndividualBalances" class="individual-balances">
+                    <!-- Individual balances will be shown here -->
+                </div>
+                <div class="balance-legend">
+                    <span class="legend-item"><span class="legend-color blue"></span> Amount to receive</span>
+                    <span class="legend-item"><span class="legend-color red"></span> Amount to pay</span>
+                </div>
+            </div>
+
+            <!-- Expenses Tab Content -->
+            <div id="expensesTabContent" class="tab-content">
+                <div class="section-header">
+                    <h3>Expenses</h3>
+                    <button class="btn-success" onclick="showAddExpenseModal()">Add Expense</button>
+                </div>
+                <div id="detailsExpensesList" class="expenses-list">
+                    <!-- Expenses will be loaded here -->
+                </div>
+                <div id="detailsNoExpenses" class="empty-state">
+                    <p>No Expenses Yet</p>
+                    <p>Add your first expense to start tracking group spending!</p>
+                    <button class="btn-success btn-large" onclick="showAddExpenseModal()">Add First Expense</button>
+                </div>
+                <div class="total-expense-summary">
+                    <span class="total-label">Total Group Expense</span>
+                    <span class="total-amount" id="detailsTotalExpensesAmount">₹0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Add Expense Modal -->
     <div id="addExpenseModal" class="modal">
@@ -223,6 +272,8 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/shared-utils.js"></script>
     <script>
         // ========================================
         // GLOBAL VARIABLES
@@ -236,10 +287,170 @@
         window.currentGroup = null;
 
         // ========================================
+        // DETAILS VIEW & TAB NAVIGATION
+        // ========================================
+        function showDetailsView() {
+            const mainContent = document.querySelector('main.container');
+            const detailsView = document.getElementById('detailsView');
+            
+            if (mainContent) mainContent.style.display = 'none';
+            if (detailsView) {
+                detailsView.style.display = 'block';
+                // Switch to balances tab by default
+                switchTab('balances');
+                // Update details view with current data
+                updateDetailsView();
+            }
+        }
+
+        function hideDetailsView() {
+            const mainContent = document.querySelector('main.container');
+            const detailsView = document.getElementById('detailsView');
+            
+            if (detailsView) detailsView.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'block';
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.getElementById('balancesTab').classList.toggle('active', tabName === 'balances');
+            document.getElementById('expensesTab').classList.toggle('active', tabName === 'expenses');
+            
+            // Update tab content
+            document.getElementById('balancesTabContent').classList.toggle('active', tabName === 'balances');
+            document.getElementById('expensesTabContent').classList.toggle('active', tabName === 'expenses');
+            
+            // Update content when switching tabs
+            if (tabName === 'balances') {
+                updateBalancesTab();
+            } else if (tabName === 'expenses') {
+                updateExpensesTab();
+            }
+        }
+
+        function updateDetailsView() {
+            updateBalancesTab();
+            updateExpensesTab();
+        }
+
+        function updateBalancesTab() {
+            if (!currentGroup || !currentGroup.expenses || currentGroup.expenses.length === 0) {
+                const detailsBalances = document.getElementById('detailsIndividualBalances');
+                if (detailsBalances) {
+                    detailsBalances.innerHTML = '<p class="no-balances">No balances to display</p>';
+                }
+                return;
+            }
+
+            // Calculate balances
+            const balances = {};
+            currentGroup.members.forEach(member => {
+                balances[member] = 0;
+            });
+
+            currentGroup.expenses.forEach(expense => {
+                const amount = parseFloat(expense.amount);
+                const splitBetween = expense.splitBetween || currentGroup.members;
+                const perPerson = amount / splitBetween.length;
+
+                if (balances[expense.paidBy] !== undefined) {
+                    balances[expense.paidBy] += amount;
+                }
+
+                splitBetween.forEach(member => {
+                    if (balances[member] !== undefined) {
+                        balances[member] -= perPerson;
+                    }
+                });
+            });
+
+            // Display in details view
+            const detailsBalances = document.getElementById('detailsIndividualBalances');
+            if (detailsBalances) {
+                const balanceEntries = Object.entries(balances)
+                    .map(([member, amount]) => ({ name: member, amount }))
+                    .sort((a, b) => {
+                        if (a.amount < 0 && b.amount < 0) return a.amount - b.amount;
+                        if (a.amount > 0 && b.amount > 0) return b.amount - a.amount;
+                        return a.amount < b.amount ? -1 : 1;
+                    });
+
+                if (balanceEntries.length > 0) {
+                    detailsBalances.innerHTML = `
+                        <div class="individual-balances-list">
+                            ${balanceEntries.map(({ name, amount }) => `
+                                <div class="balance-item-simple">
+                                    <span class="balance-name">${name}</span>
+                                    <span class="balance-amount-simple ${amount > 0 ? 'receive' : amount < 0 ? 'pay' : 'zero'}">
+                                        ${amount < 0 ? '-' : ''}${formatCurrency(Math.abs(amount))}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function updateExpensesTab() {
+            if (!currentGroup || !currentGroup.expenses) return;
+
+            const detailsExpensesList = document.getElementById('detailsExpensesList');
+            const detailsNoExpenses = document.getElementById('detailsNoExpenses');
+            const detailsTotal = document.getElementById('detailsTotalExpensesAmount');
+
+            if (currentGroup.expenses.length === 0) {
+                if (detailsExpensesList) detailsExpensesList.style.display = 'none';
+                if (detailsNoExpenses) detailsNoExpenses.style.display = 'block';
+                if (detailsTotal) detailsTotal.textContent = formatCurrency(0);
+                return;
+            }
+
+            // Calculate each person's share (split amount, not what they paid)
+            const shareByPerson = {};
+            currentGroup.members.forEach(member => {
+                shareByPerson[member] = 0;
+            });
+
+            currentGroup.expenses.forEach(expense => {
+                const amount = parseFloat(expense.amount || 0);
+                const splitBetween = expense.splitBetween || currentGroup.members;
+                const perPerson = amount / splitBetween.length;
+
+                // Each person who is part of the split gets their share
+                splitBetween.forEach(member => {
+                    if (shareByPerson[member] !== undefined) {
+                        shareByPerson[member] += perPerson;
+                    }
+                });
+            });
+
+            // Convert to array and sort by amount (highest first)
+            const shareEntries = Object.entries(shareByPerson)
+                .map(([name, amount]) => ({ name, amount }))
+                .sort((a, b) => b.amount - a.amount);
+
+            if (detailsExpensesList) {
+                detailsExpensesList.style.display = 'block';
+                detailsExpensesList.innerHTML = shareEntries.map(({ name, amount }) => `
+                    <div class="expense-item-simple">
+                        <div class="expense-item-content">
+                            <span class="expense-name">${name}</span>
+                            <span class="expense-amount-simple">${formatCurrency(amount)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            if (detailsNoExpenses) detailsNoExpenses.style.display = 'none';
+            if (detailsTotal) detailsTotal.textContent = formatCurrency(currentGroup.totalExpenses || 0);
+        }
+
+        // ========================================
         // INITIALIZATION
         // ========================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Group Detail Page Loading...');
+            console.log('Group Detail Page Loading...');
             console.log('Current URL:', window.location.href);
             console.log('URL search:', window.location.search);
 
@@ -257,32 +468,32 @@
             if (userData) {
                 try {
                     window.currentUser = JSON.parse(userData);
-                    console.log('👤 User session restored for group detail:', window.currentUser.name);
+                    console.log('User session restored for group detail:', window.currentUser.name);
                 } catch (error) {
                     console.error('Failed to parse user data:', error);
                     // Don't redirect immediately - might be a shared link
                 }
             } else {
-                console.warn('⚠️ No user session found');
+                console.warn('No user session found');
             }
 
             // Get group ID from URL with enhanced debugging
-            console.log('📋 Parsing URL parameters...');
+            console.log('Parsing URL parameters...');
             const urlParams = new URLSearchParams(window.location.search);
             console.log('URL Params object:', urlParams);
             console.log('All URL param entries:', [...urlParams.entries()]);
 
             const groupId = urlParams.get('id');
-            console.log('🎯 Group ID from URL:', groupId);
+            console.log('Group ID from URL:', groupId);
 
             if (groupId) {
-                console.log('✅ Group ID found, proceeding with load...');
+                console.log('Group ID found, proceeding with load...');
                 window.currentGroupId = groupId;
                 currentGroupId = groupId;
 
                 loadGroupData(groupId);
             } else {
-                console.error('❌ No group ID provided in URL');
+                console.error('No group ID provided in URL');
                 console.log('Available URL params:', window.location.search);
 
                 showNotification('No group ID provided', 'error');
@@ -293,12 +504,12 @@
 
             // Initialize real-time sync for group detail page
             if (window.currentUser && typeof window.startRealtimeSync === 'function') {
-                console.log('🔄 Scheduling real-time sync initialization...');
+                console.log('Scheduling real-time sync initialization...');
                 setTimeout(() => {
                     window.startRealtimeSync();
                 }, 2000); // Give time for group to load
             } else {
-                console.log('⚠️ Real-time sync not initialized - missing user or function');
+                console.log('Real-time sync not initialized - missing user or function');
             }
         });
 
@@ -308,17 +519,17 @@
 
         // FIXED: Enhanced loadGroupData with persistent storage
         async function loadGroupData(groupId) {
-            console.log('🔍 Loading group data for ID:', groupId);
+            console.log('Loading group data for ID:', groupId);
 
             // First try to load from localStorage - THIS IS CRITICAL
             const groups = loadFromLocalStorage();
-            console.log('📊 Loaded groups from localStorage:', groups.length, 'groups found');
+            console.log('Loaded groups from localStorage:', groups.length, 'groups found');
 
             let foundGroup = groups.find(g => g.id === groupId);
 
             if (foundGroup) {
-                console.log('✅ Group found in localStorage:', foundGroup.name);
-                console.log('📋 Group has', foundGroup.expenses?.length || 0, 'expenses');
+                console.log('Group found in localStorage:', foundGroup.name);
+                console.log('Group has', foundGroup.expenses?.length || 0, 'expenses');
 
                 // CRITICAL: Set both currentGroup references
                 currentGroup = foundGroup;
@@ -330,7 +541,7 @@
             }
 
             // Group not found locally - try to fetch from database
-            console.log('🔄 Group not found locally, checking database...');
+            console.log('Group not found locally, checking database...');
             showNotification('Loading group from link...', 'info');
 
             if (!window.currentUser) {
@@ -412,79 +623,109 @@
             try {
                 const data = localStorage.getItem('spliteasy_groups');
                 const groups = data ? JSON.parse(data) : [];
-                console.log('📊 LoadFromLocalStorage: Found', groups.length, 'groups');
+                console.log('LoadFromLocalStorage: Found', groups.length, 'groups');
                 return groups;
             } catch (error) {
-                console.error('❌ Error loading from localStorage:', error);
+                console.error('Error loading from localStorage:', error);
                 return [];
             }
         }
 
-        // FIXED: Critical - proper save function that preserves ALL data
+        // Optimized save function with batching and cache invalidation
+        // Create a debounced version that works even if debounce isn't loaded yet
+        let saveGroupsToLocalStorageTimeout = null;
+        let lastGroupsToSave = null;
+        
         function saveGroupsToLocalStorage(groups) {
-            try {
-                console.log('💾 Saving', groups.length, 'groups to localStorage');
+            // Store the groups to save
+            lastGroupsToSave = groups;
+            
+            // Clear existing timeout if debounce isn't available
+            if (saveGroupsToLocalStorageTimeout) {
+                clearTimeout(saveGroupsToLocalStorageTimeout);
+            }
 
-                // Ensure each group has proper structure and calculated totals
-                groups.forEach((group, index) => {
-                    console.log(`📋 Group ${index + 1}: "${group.name}" has ${group.expenses?.length || 0} expenses`);
+            const saveFunction = () => {
+                const groupsToSave = lastGroupsToSave;
+                if (!groupsToSave) return;
+                
+                try {
+                    console.log('Saving', groupsToSave.length, 'groups to localStorage');
 
-                    // Ensure expenses array exists
-                    if (!group.expenses) {
-                        group.expenses = [];
-                    }
+                    // Ensure each group has proper structure and calculated totals
+                    groupsToSave.forEach((group) => {
+                        // Ensure expenses array exists
+                        if (!group.expenses) {
+                            group.expenses = [];
+                        }
 
-                    // Calculate total expenses
-                    if (group.expenses.length > 0) {
-                        group.totalExpenses = group.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+                        // Calculate total expenses
+                        if (group.expenses.length > 0) {
+                            group.totalExpenses = group.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
 
-                        // Ensure each expense has proper structure
-                        group.expenses.forEach(expense => {
-                            if (expense.splitBetween && expense.splitBetween.length > 0) {
-                                expense.perPersonAmount = parseFloat(expense.amount || 0) / expense.splitBetween.length;
+                            // Ensure each expense has proper structure
+                            group.expenses.forEach(expense => {
+                                if (expense.splitBetween && expense.splitBetween.length > 0) {
+                                    expense.perPersonAmount = parseFloat(expense.amount || 0) / expense.splitBetween.length;
+                                }
+                            });
+                        } else {
+                            group.totalExpenses = 0;
+                        }
+                    });
+
+                    // Use batchLocalStorageOperation if available, otherwise direct save
+                    if (typeof batchLocalStorageOperation === 'function') {
+                        batchLocalStorageOperation(() => {
+                            localStorage.setItem('spliteasy_groups', JSON.stringify(groupsToSave));
+                            if (typeof invalidateGroupsCache === 'function') {
+                                invalidateGroupsCache();
                             }
+                            console.log('Successfully saved groups to localStorage');
                         });
                     } else {
-                        group.totalExpenses = 0;
+                        localStorage.setItem('spliteasy_groups', JSON.stringify(groupsToSave));
+                        console.log('Successfully saved groups to localStorage');
                     }
-                });
 
-                // Save with detailed logging
-                const jsonString = JSON.stringify(groups, null, 2);
-                localStorage.setItem('spliteasy_groups', jsonString);
-                console.log('✅ Successfully saved groups to localStorage');
+                } catch (error) {
+                    console.error('Failed to save to localStorage:', error);
+                    showNotification('Failed to save data locally', 'error');
+                }
+            };
 
-                // Verify save
-                const verification = localStorage.getItem('spliteasy_groups');
-                const parsedVerification = JSON.parse(verification);
-                console.log('🔍 Verification: Saved', parsedVerification.length, 'groups');
-
-            } catch (error) {
-                console.error('❌ Failed to save to localStorage:', error);
-                showNotification('Failed to save data locally', 'error');
+            // Use debounce if available, otherwise use setTimeout
+            if (typeof debounce === 'function') {
+                if (!window._debouncedSaveGroupsToLocalStorage) {
+                    window._debouncedSaveGroupsToLocalStorage = debounce(saveFunction, 300);
+                }
+                window._debouncedSaveGroupsToLocalStorage();
+            } else {
+                // Fallback: simple debounce with setTimeout
+                saveGroupsToLocalStorageTimeout = setTimeout(saveFunction, 300);
             }
         }
 
         // FIXED: Critical updateGroupInStorage function
         function updateGroupInStorage() {
-            console.log('🔄 Updating group in storage for group ID:', currentGroupId);
+            console.log('Updating group in storage for group ID:', currentGroupId);
 
             if (!currentGroup || !currentGroupId) {
-                console.error('❌ No currentGroup or currentGroupId to update');
+                console.error('No currentGroup or currentGroupId to update');
                 return;
             }
 
             try {
                 // Load all groups from localStorage
                 const allGroups = loadFromLocalStorage();
-                console.log('📊 Found', allGroups.length, 'total groups in storage');
+                console.log('Found', allGroups.length, 'total groups in storage');
 
                 // Find the index of the current group
                 const groupIndex = allGroups.findIndex(g => g.id === currentGroupId);
 
                 if (groupIndex !== -1) {
                     console.log('📍 Found group at index', groupIndex, 'in localStorage');
-                    console.log('📋 Updating with', currentGroup.expenses?.length || 0, 'expenses');
+                    console.log('Updating with', currentGroup.expenses?.length || 0, 'expenses');
 
                     // CRITICAL: Replace the entire group object with current data
                     allGroups[groupIndex] = { ...currentGroup };
@@ -495,16 +736,16 @@
                     // Save back to localStorage
                     saveGroupsToLocalStorage(allGroups);
 
-                    console.log('✅ Successfully updated group in storage');
+                    console.log('Successfully updated group in storage');
                 } else {
-                    console.error('❌ Group not found in localStorage for update');
+                    console.error('Group not found in localStorage for update');
                     // Group doesn't exist, add it
                     allGroups.push(currentGroup);
                     saveGroupsToLocalStorage(allGroups);
-                    console.log('✅ Added new group to storage');
+                    console.log('Added new group to storage');
                 }
             } catch (error) {
-                console.error('❌ Failed to update group in storage:', error);
+                console.error('Failed to update group in storage:', error);
             }
         }
 
@@ -516,31 +757,25 @@
             }
 
             console.log('🎨 Updating display for group:', currentGroup.name);
-            console.log('📋 Group has', currentGroup.expenses?.length || 0, 'expenses to display');
+            console.log('Group has', currentGroup.expenses?.length || 0, 'expenses to display');
 
             safeUpdateElement('groupName', currentGroup.name);
             safeUpdateElement('groupMeta', 
                 `${currentGroup.members.length} members • ${currentGroup.expenses?.length || 0} expenses • Created ${formatDate(currentGroup.createdAt)}`
             );
             safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses || 0));
+            safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses || 0));
 
             displayExpenses();
             calculateBalances();
         }
 
-        function safeUpdateElement(id, content) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = content;
-            } else {
-                console.warn(`Element with id '${id}' not found`);
-            }
-        }
+        // safeUpdateElement is now in shared-utils.js
 
         // FIXED: Enhanced displayExpenses with detailed logging
         function displayExpenses() {
             console.log('🎨 DisplayExpenses called');
-            console.log('📋 Current group expenses:', currentGroup?.expenses?.length || 0);
+            console.log('Current group expenses:', currentGroup?.expenses?.length || 0);
 
             const expensesList = document.getElementById('expensesList');
             const noExpenses = document.getElementById('noExpenses');
@@ -552,37 +787,72 @@
                 return;
             }
 
-            console.log('📋 Displaying', currentGroup.expenses.length, 'expenses');
+            console.log('Displaying', currentGroup.expenses.length, 'expenses');
             if (expensesList) expensesList.style.display = 'block';
             if (noExpenses) noExpenses.style.display = 'none';
 
+            // Store all expenses for filtering
+            if (allExpenses.length === 0 || allExpenses.length !== currentGroup.expenses.length) {
+                allExpenses = [...currentGroup.expenses];
+            }
+
             if (expensesList) {
                 expensesList.innerHTML = currentGroup.expenses.map((expense, index) => {
-                    console.log(`💰 Expense ${index + 1}:`, expense.name, '-', formatCurrency(expense.amount));
+                    console.log(`Expense ${index + 1}:`, expense.name, '-', formatCurrency(expense.amount));
                     return `
                         <div class="expense-item">
                             <div class="expense-item-header">
                                 <div class="expense-actions">
-                                    <button class="expense-action-btn edit" onclick="editExpense('${expense.id}')" title="Edit Expense">✏️</button>
-                                    <button class="expense-action-btn delete" onclick="deleteExpense('${expense.id}')" title="Delete Expense">🗑️</button>
+                                    <button class="expense-action-btn edit" onclick="editExpense('${expense.id}')" title="Edit Expense">✎</button>
+                                    <button class="expense-action-btn delete" onclick="deleteExpense('${expense.id}')" title="Delete Expense">×</button>
                                 </div>
                             </div>
                             <div class="expense-content">
                                 <div class="expense-info">
-                                    <h4>${expense.name}</h4>
-                                    <p>Paid by ${expense.paidBy} • Split between ${expense.splitBetween?.join(', ') || 'Unknown'}</p>
-                                    <small>${formatDate(expense.date)}</small>
-                                </div>
-                                <div class="expense-amount">
-                                    ${formatCurrency(expense.amount)}
+                                    <div class="expense-title-row">
+                                        <h4>${expense.name}</h4>
+                                        <div class="expense-amount">${formatCurrency(expense.amount)}</div>
+                                    </div>
+                                    <div class="expense-meta-row">
+                                        <span class="expense-meta">Paid by ${expense.paidBy} • Split between ${expense.splitBetween?.join(', ') || 'Unknown'}</span>
+                                        <span class="expense-date">${formatDate(expense.date)}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     `;
                 }).join('');
 
-                console.log('✅ Expenses HTML generated and inserted');
+                console.log('Expenses HTML generated and inserted');
             }
+        }
+
+        // Store original expenses for filtering
+        let allExpenses = [];
+
+        function filterExpenses() {
+            const searchInput = document.getElementById('expenseSearchInput');
+            const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+            
+            if (!currentGroup || !currentGroup.expenses) return;
+            
+            // Restore from allExpenses if needed
+            if (allExpenses.length === 0) {
+                allExpenses = [...currentGroup.expenses];
+            }
+            
+            if (!searchTerm) {
+                currentGroup.expenses = [...allExpenses];
+            } else {
+                currentGroup.expenses = allExpenses.filter(expense => 
+                    expense.name.toLowerCase().includes(searchTerm) ||
+                    expense.paidBy.toLowerCase().includes(searchTerm) ||
+                    (expense.splitBetween && expense.splitBetween.some(member => member.toLowerCase().includes(searchTerm)))
+                );
+            }
+            
+            displayExpenses();
+            calculateBalances();
         }
 
         // FIXED: Enhanced Settlement System
@@ -663,31 +933,25 @@
             if (settlements.length === 0) {
                 balancesList.innerHTML = `
                     <div class="settlement-complete">
-                        <div class="settlement-icon">✅</div>
+                        <div class="settlement-icon">✓</div>
                         <h4>All Settled Up!</h4>
                         <p>No payments needed - everyone is even!</p>
                     </div>
                 `;
             } else {
                 const settlementHTML = settlements.map(settlement => `
-                    <div class="settlement-item">
-                        <div class="settlement-content">
-                            <div class="settlement-from">
-                                <span class="member-name debtor">${settlement.from}</span>
-                            </div>
-                            <div class="settlement-arrow">
-                                <span class="arrow-icon">→</span>
-                                <span class="settlement-amount">${formatCurrency(settlement.amount)}</span>
-                            </div>
-                            <div class="settlement-to">
-                                <span class="member-name creditor">${settlement.to}</span>
-                            </div>
+                    <div class="settlement-item-modern">
+                        <div class="settlement-info">
+                            <span class="settlement-from-name">${settlement.from}</span>
+                            <span class="settlement-arrow-modern">→</span>
+                            <span class="settlement-to-name">${settlement.to}</span>
                         </div>
+                        <div class="settlement-amount-modern">${formatCurrency(settlement.amount)}</div>
                     </div>
                 `).join('');
 
                 balancesList.innerHTML = `
-                    <div class="settlements-list">
+                    <div class="settlements-list-modern">
                         ${settlementHTML}
                     </div>
                 `;
@@ -747,7 +1011,7 @@
 
         // FIXED: Critical addExpense function with proper persistence
         async function addExpense() {
-            console.log('💰 Adding new expense...');
+            console.log('Adding new expense...');
 
             const description = document.getElementById('expenseDescription')?.value.trim();
             const amount = document.getElementById('expenseAmount')?.value;
@@ -775,16 +1039,16 @@
             // CRITICAL: Ensure expenses array exists
             if (!currentGroup.expenses) {
                 currentGroup.expenses = [];
-                console.log('📋 Initialized expenses array');
+                console.log('Initialized expenses array');
             }
 
             // Add expense to current group
             currentGroup.expenses.push(newExpense);
-            console.log('📊 Added expense. Group now has', currentGroup.expenses.length, 'expenses');
+            console.log('Added expense. Group now has', currentGroup.expenses.length, 'expenses');
 
             // Recalculate total
             currentGroup.totalExpenses = (currentGroup.totalExpenses || 0) + parseFloat(amount);
-            console.log('💰 New total expenses:', formatCurrency(currentGroup.totalExpenses));
+            console.log('New total expenses:', formatCurrency(currentGroup.totalExpenses));
 
             // CRITICAL: Save to storage immediately
             updateGroupInStorage();
@@ -801,9 +1065,9 @@
             if (typeof window.syncExpenseToDatabase === 'function') {
                 try {
                     await window.syncExpenseToDatabase(newExpense, currentGroup.id);
-                    console.log('✅ Expense synced to database');
+                    console.log('Expense synced to database');
                 } catch (error) {
-                    console.warn('⚠️ Failed to sync expense to database:', error);
+                    console.warn('Failed to sync expense to database:', error);
                 }
             }
 
@@ -928,9 +1192,9 @@
                 if (typeof window.deleteExpenseFromDatabase === 'function') {
                     try {
                         await window.deleteExpenseFromDatabase(expenseId);
-                        console.log('✅ Expense deleted from database');
+                        console.log('Expense deleted from database');
                     } catch (error) {
-                        console.warn('⚠️ Database deletion failed:', error);
+                        console.warn('Database deletion failed:', error);
                     }
                 }
 
@@ -1076,8 +1340,8 @@
                     <span class="dynamic-item-name">${memberName}</span>
                 </div>
                 <div class="dynamic-item-actions">
-                    <button class="icon-btn edit" onclick="editGroupMember('${itemId}')" title="Edit">✏️</button>
-                    <button class="icon-btn delete" onclick="removeGroupMember('${itemId}')" title="Remove">🗑️</button>
+                    <button class="icon-btn edit" onclick="editGroupMember('${itemId}')" title="Edit">✎</button>
+                    <button class="icon-btn delete" onclick="removeGroupMember('${itemId}')" title="Remove">×</button>
                 </div>
             `;
 
@@ -1197,54 +1461,31 @@
         }
 
         function goBack() {
-            window.location.href = 'index.html';
-        }
-
-        // ========================================
-        // UTILITY FUNCTIONS
-        // ========================================
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                minimumFractionDigits: 2
-            }).format(amount || 0);
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            });
-        }
-
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            if (notification) {
-                notification.textContent = message;
-                notification.className = `notification ${type}`;
-                notification.style.display = 'block';
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
+            // Check if details view is visible
+            const detailsView = document.getElementById('detailsView');
+            if (detailsView && detailsView.style.display !== 'none') {
+                hideDetailsView();
+            } else {
+                window.location.href = 'index.html';
             }
         }
+
+        // ========================================
+        // UTILITY FUNCTIONS (Using shared utilities)
+        // ========================================
+        // All utility functions are now in shared-utils.js
+        // formatCurrency, formatDate, generateId, showNotification
+        // are available globally from shared-utils.js
 
         <!-- Add this script to your HTML files for better cache management -->
 
 // Enhanced Service Worker Registration with Update Detection
 if ('serviceWorker' in navigator) {
-  console.log('🔄 Registering service worker...');
+  console.log('Registering service worker...');
 
   navigator.serviceWorker.register('/sw.js')
     .then(registration => {
-      console.log('✅ SW registered:', registration);
+      console.log('Service worker registered:', registration);
 
       // Check for updates every 30 seconds
       setInterval(() => {
@@ -1254,11 +1495,11 @@ if ('serviceWorker' in navigator) {
       // Listen for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        console.log('🆕 New service worker found!');
+        console.log('New service worker found');
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('🔄 New content available, will update...');
+            console.log('New content available, will update...');
 
             // Show update notification
             if (typeof showNotification === 'function') {
@@ -1274,18 +1515,18 @@ if ('serviceWorker' in navigator) {
       });
     })
     .catch(error => {
-      console.log('❌ SW registration failed:', error);
+      console.log('Service worker registration failed:', error);
     });
 
   // Listen for messages from service worker
   navigator.serviceWorker.addEventListener('message', event => {
-    console.log('📢 Message from SW:', event.data);
+    console.log('Message from service worker:', event.data);
 
     if (event.data.type === 'SW_UPDATED') {
       if (typeof showNotification === 'function') {
         showNotification(event.data.message, 'success');
       } else {
-        console.log('📢', event.data.message);
+        console.log(event.data.message);
       }
     }
   });
@@ -1303,7 +1544,7 @@ window.clearAppCache = function() {
         cacheNames.map(cacheName => caches.delete(cacheName))
       );
     }).then(() => {
-      console.log('🧹 All caches cleared manually');
+      console.log('All caches cleared manually');
       if (typeof showNotification === 'function') {
         showNotification('Cache cleared! App will refresh...', 'success');
       }
@@ -1317,16 +1558,16 @@ window.forceAppUpdate = function() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready.then(registration => {
       registration.update().then(() => {
-        console.log('🔄 Forced service worker update');
+        console.log('Forced service worker update');
         setTimeout(() => window.location.reload(), 1000);
       });
     });
   }
 };
 
-console.log('✅ Cache management helpers loaded');
-console.log('💡 Use window.clearAppCache() to clear cache manually');  
-console.log('💡 Use window.forceAppUpdate() to force update');
+console.log('Cache management helpers loaded');
+console.log('Use window.clearAppCache() to clear cache manually');  
+console.log('Use window.forceAppUpdate() to force update');
 
         // ========================================
         // EVENT LISTENERS
@@ -1354,11 +1595,10 @@ console.log('💡 Use window.forceAppUpdate() to force update');
         });
 
         // Debug: Log when script is fully loaded
-        console.log('✅ Group detail script fully loaded with FIXED expense persistence');
+        console.log('Group detail script fully loaded');
     </script>
 
     <!-- External Scripts -->
-    <script src="js/shared-utils.js"></script>
     <script src="js/shared-supabase.js"></script>
     <script src="js/shared-sync.js"></script>
 </body>

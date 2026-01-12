@@ -187,6 +187,8 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/shared-utils.js"></script>
     <script>
         // ========================================
         // GLOBAL VARIABLES
@@ -207,7 +209,7 @@
         document.addEventListener('DOMContentLoaded', initializeApp);
 
         async function initializeApp() {
-            console.log('🚀 Initializing SplitEasy...');
+            console.log('Initializing SplitEasy...');
 
             // Initialize Supabase if available
             if (typeof window.initializeSupabase === 'function') {
@@ -604,7 +606,7 @@
             const userName = userData.name;
 
             const confirmation = confirm(
-                `⚠️ WARNING: This will permanently delete the account "${userName}" and ALL associated groups and expenses!\n\n` +
+                `WARNING: This will permanently delete the account "${userName}" and ALL associated groups and expenses!\n\n` +
                 `This action cannot be undone. Are you absolutely sure?`
             );
 
@@ -710,21 +712,53 @@
             }
         }
 
+        // Optimized save with batching and cache invalidation
+        // Create a debounced version that works even if debounce isn't loaded yet
+        let saveToLocalStorageTimeout = null;
         function saveToLocalStorage() {
-            try {
-                // Calculate totals for each group
-                window.groups.forEach(group => {
-                    if (group.expenses && group.expenses.length > 0) {
-                        group.totalExpenses = group.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
-                    } else {
-                        group.totalExpenses = 0;
-                    }
-                });
+            // Clear existing timeout if debounce isn't available
+            if (saveToLocalStorageTimeout) {
+                clearTimeout(saveToLocalStorageTimeout);
+            }
 
-                localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
-                console.log('💾 Data saved to localStorage');
-            } catch (error) {
-                console.error('Failed to save to localStorage:', error);
+            const saveFunction = () => {
+                try {
+                    // Calculate totals for each group
+                    window.groups.forEach(group => {
+                        if (group.expenses && group.expenses.length > 0) {
+                            group.totalExpenses = group.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+                        } else {
+                            group.totalExpenses = 0;
+                        }
+                    });
+
+                    // Use batchLocalStorageOperation if available, otherwise direct save
+                    if (typeof batchLocalStorageOperation === 'function') {
+                        batchLocalStorageOperation(() => {
+                            localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
+                            if (typeof invalidateGroupsCache === 'function') {
+                                invalidateGroupsCache();
+                            }
+                            console.log('Data saved to localStorage');
+                        });
+                    } else {
+                        localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
+                        console.log('Data saved to localStorage');
+                    }
+                } catch (error) {
+                    console.error('Failed to save to localStorage:', error);
+                }
+            };
+
+            // Use debounce if available, otherwise use setTimeout
+            if (typeof debounce === 'function') {
+                if (!window._debouncedSaveToLocalStorage) {
+                    window._debouncedSaveToLocalStorage = debounce(saveFunction, 300);
+                }
+                window._debouncedSaveToLocalStorage();
+            } else {
+                // Fallback: simple debounce with setTimeout
+                saveToLocalStorageTimeout = setTimeout(saveFunction, 300);
             }
         }
 
@@ -748,8 +782,8 @@
                 <div class="group-card">
                     <div class="group-card-header">
                         <div class="group-card-actions">
-                            <button class="group-action-btn edit" onclick="editGroup('${group.id}')" title="Edit Group">✏️</button>
-                            <button class="group-action-btn delete" onclick="deleteGroup('${group.id}')" title="Delete Group">🗑️</button>
+                            <button class="group-action-btn edit" onclick="editGroup('${group.id}')" title="Edit Group">✎</button>
+                            <button class="group-action-btn delete" onclick="deleteGroup('${group.id}')" title="Delete Group">×</button>
                         </div>
                     </div>
                     <div class="group-card-content" onclick="openGroup('${group.id}')">
@@ -833,8 +867,8 @@
                     <span class="dynamic-item-name">${memberName}</span>
                 </div>
                 <div class="dynamic-item-actions">
-                    <button class="icon-btn edit" onclick="editMember('${itemId}')" title="Edit">✏️</button>
-                    <button class="icon-btn delete" onclick="removeMember('${itemId}')" title="Remove">🗑️</button>
+                    <button class="icon-btn edit" onclick="editMember('${itemId}')" title="Edit">✎</button>
+                    <button class="icon-btn delete" onclick="removeMember('${itemId}')" title="Remove">×</button>
                 </div>
             `;
 
@@ -917,7 +951,7 @@
 
         // FIXED: Edit Group function - main entry point
         function editGroup(groupId) {
-            console.log('🔧 Edit group clicked for ID:', groupId);
+            console.log('Edit group clicked for ID:', groupId);
 
             if (!groupId) {
                 console.error('No group ID provided');
@@ -934,7 +968,7 @@
                 return;
             }
 
-            console.log('✅ Found group for editing:', group.name);
+            console.log('Found group for editing:', group.name);
 
             // Set editing group ID
             editingGroupId = groupId;
@@ -945,7 +979,7 @@
 
         // Show edit group modal with group data
         function showEditGroupModal(group) {
-            console.log('🔧 Setting up edit modal for:', group.name);
+            console.log('Setting up edit modal for:', group.name);
 
             // Clear any previous dynamic members
             const editDynamicContainer = document.getElementById('editDynamicMembers');
@@ -958,7 +992,7 @@
             const editGroupNameInput = document.getElementById('editGroupName');
             if (editGroupNameInput) {
                 editGroupNameInput.value = group.name;
-                console.log('✅ Group name populated:', group.name);
+                console.log('Group name populated:', group.name);
             }
 
             // Setup members grid
@@ -968,7 +1002,7 @@
             const modal = document.getElementById('editGroupModal');
             if (modal) {
                 modal.style.display = 'block';
-                console.log('✅ Edit group modal displayed');
+                console.log('Edit group modal displayed');
             }
         }
 
@@ -988,7 +1022,7 @@
                 </div>
             `).join('');
 
-            console.log('✅ Edit members grid populated');
+            console.log('Edit members grid populated');
         }
 
         // Edit group member selection functions
@@ -1038,8 +1072,8 @@
                     <span class="dynamic-item-name">${memberName}</span>
                 </div>
                 <div class="dynamic-item-actions">
-                    <button class="icon-btn edit" onclick="editEditMember('${itemId}')" title="Edit">✏️</button>
-                    <button class="icon-btn delete" onclick="removeEditMember('${itemId}')" title="Remove">🗑️</button>
+                    <button class="icon-btn edit" onclick="editEditMember('${itemId}')" title="Edit">✎</button>
+                    <button class="icon-btn delete" onclick="removeEditMember('${itemId}')" title="Remove">×</button>
                 </div>
             `;
 
@@ -1078,7 +1112,7 @@
 
         // Save edit group changes
         async function saveEditGroupChanges() {
-            console.log('💾 Saving edit group changes...');
+            console.log('Saving edit group changes...');
 
             if (!editingGroupId) {
                 showNotification('No group being edited', 'error');
@@ -1130,9 +1164,9 @@
                 if (typeof window.syncGroupToDatabase === 'function') {
                     try {
                         await window.syncGroupToDatabase(group);
-                        console.log('✅ Group synced to database successfully');
+                        console.log('Group synced to database successfully');
                     } catch (dbError) {
-                        console.warn('⚠️ Database sync failed:', dbError);
+                        console.warn('Database sync failed:', dbError);
                         showNotification('Group updated locally, cloud sync failed', 'warning');
                     }
                 }
@@ -1142,14 +1176,14 @@
 
                 showNotification('Group updated successfully!', 'success');
 
-                console.log('✅ Group updated successfully:', {
+                console.log('Group updated successfully:', {
                     oldName,
                     newName: groupName,
                     members: allMembers
                 });
 
             } catch (error) {
-                console.error('❌ Failed to save group changes:', error);
+                console.error('Failed to save group changes:', error);
                 showNotification('Failed to update group', 'error');
             }
         }
@@ -1194,9 +1228,9 @@
                 if (typeof window.deleteGroupFromDatabase === 'function') {
                     try {
                         await window.deleteGroupFromDatabase(editingGroupId);
-                        console.log('✅ Group deleted from database');
+                        console.log('Group deleted from database');
                     } catch (dbError) {
-                        console.warn('⚠️ Database deletion failed:', dbError);
+                        console.warn('Database deletion failed:', dbError);
                         showNotification('Failed to delete from cloud, but will delete locally', 'warning');
                     }
                 }
@@ -1212,7 +1246,7 @@
                 showNotification('Group deleted successfully', 'success');
 
             } catch (error) {
-                console.error('❌ Failed to delete group:', error);
+                console.error('Failed to delete group:', error);
                 showNotification('Failed to delete group completely', 'error');
             }
         }
@@ -1247,64 +1281,14 @@
         }
 
         // ========================================
-        // UTILITY FUNCTIONS
+        // UTILITY FUNCTIONS (Using shared utilities)
         // ========================================
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                minimumFractionDigits: 2
-            }).format(amount || 0);
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            });
-        }
+        // All utility functions are now in shared-utils.js
+        // formatCurrency, formatDate, escapeHtml, formatRelativeTime, generateId, showNotification
+        // are available globally from shared-utils.js
 
         function openGroup(groupId) {
             window.location.href = `group-detail.html?id=${groupId}`;
-        }
-
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            if (notification) {
-                notification.textContent = message;
-                notification.className = `notification ${type}`;
-                notification.style.display = 'block';
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatRelativeTime(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMins / 60);
-            const diffDays = Math.floor(diffHours / 24);
-
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            if (diffDays < 7) return `${diffDays}d ago`;
-            return date.toLocaleDateString();
         }
 
         // ========================================
@@ -1345,11 +1329,11 @@
 
 // Enhanced Service Worker Registration with Update Detection
 if ('serviceWorker' in navigator) {
-  console.log('🔄 Registering service worker...');
+  console.log('Registering service worker...');
 
   navigator.serviceWorker.register('/sw.js')
     .then(registration => {
-      console.log('✅ SW registered:', registration);
+      console.log('Service worker registered:', registration);
 
       // Check for updates every 30 seconds
       setInterval(() => {
@@ -1359,11 +1343,11 @@ if ('serviceWorker' in navigator) {
       // Listen for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        console.log('🆕 New service worker found!');
+        console.log('New service worker found');
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('🔄 New content available, will update...');
+            console.log('New content available, will update...');
 
             // Show update notification
             if (typeof showNotification === 'function') {
@@ -1379,18 +1363,18 @@ if ('serviceWorker' in navigator) {
       });
     })
     .catch(error => {
-      console.log('❌ SW registration failed:', error);
+      console.log('Service worker registration failed:', error);
     });
 
   // Listen for messages from service worker
   navigator.serviceWorker.addEventListener('message', event => {
-    console.log('📢 Message from SW:', event.data);
+    console.log('Message from service worker:', event.data);
 
     if (event.data.type === 'SW_UPDATED') {
       if (typeof showNotification === 'function') {
         showNotification(event.data.message, 'success');
       } else {
-        console.log('📢', event.data.message);
+        console.log(event.data.message);
       }
     }
   });
@@ -1408,7 +1392,7 @@ window.clearAppCache = function() {
         cacheNames.map(cacheName => caches.delete(cacheName))
       );
     }).then(() => {
-      console.log('🧹 All caches cleared manually');
+      console.log('All caches cleared manually');
       if (typeof showNotification === 'function') {
         showNotification('Cache cleared! App will refresh...', 'success');
       }
@@ -1422,23 +1406,22 @@ window.forceAppUpdate = function() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready.then(registration => {
       registration.update().then(() => {
-        console.log('🔄 Forced service worker update');
+        console.log('Forced service worker update');
         setTimeout(() => window.location.reload(), 1000);
       });
     });
   }
 };
 
-console.log('✅ Cache management helpers loaded');
-console.log('💡 Use window.clearAppCache() to clear cache manually');  
-console.log('💡 Use window.forceAppUpdate() to force update');
+console.log('Cache management helpers loaded');
+console.log('Use window.clearAppCache() to clear cache manually');  
+console.log('Use window.forceAppUpdate() to force update');
 
         // Debug: Log when script is fully loaded
-        console.log('✅ Index.html script fully loaded with clean previous users interface');
+        console.log('Index.html script fully loaded');
     </script>
 
     <!-- External Scripts -->
-    <script src="js/shared-utils.js"></script>
     <script src="js/shared-supabase.js"></script>
     <script src="js/shared-sync.js"></script>
 </body>
