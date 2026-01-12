@@ -211,13 +211,26 @@
         async function initializeApp() {
             console.log('Initializing SplitEasy...');
 
-            // Initialize Supabase if available
-            if (typeof window.initializeSupabase === 'function') {
-                try {
-                    window.initializeSupabase();
-                } catch (error) {
-                    console.warn('Supabase initialization failed:', error);
-                }
+            // REQUIRED: Initialize Supabase - app won't work without it
+            if (typeof window.initializeSupabase !== 'function') {
+                showNotification('Supabase initialization failed. Please check your configuration.', 'error');
+                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Configuration Error</h1><p>Supabase is required but not configured. Please check js/config.js</p></div>';
+                return;
+            }
+
+            const supabaseInitialized = window.initializeSupabase();
+            if (!supabaseInitialized) {
+                showNotification('Supabase initialization failed. Please check your connection and configuration.', 'error');
+                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Connection Error</h1><p>Cannot connect to Supabase. Please check your internet connection and js/config.js configuration.</p></div>';
+                return;
+            }
+
+            // Wait a moment for Supabase to fully initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (!window.supabaseClient) {
+                showNotification('Supabase client not available. Please refresh the page.', 'error');
+                return;
             }
 
             // Check for existing user
@@ -227,7 +240,7 @@
             if (userData) {
                 window.currentUser = JSON.parse(userData);
                 document.getElementById('currentUserName').textContent = window.currentUser.name;
-                loadGroups();
+                await loadGroups();
                 showMainContent();
             } else if (previousUsers.length > 0) {
                 showUserLoginModal(true); // Show with previous users
@@ -471,7 +484,7 @@
                 window.currentUser = userData;
                 document.getElementById('currentUserName').textContent = userName;
                 showMainContent();
-                loadGroups();
+                await loadGroups();
 
                 // Initialize real-time sync
                 if (typeof window.startRealtimeSync === 'function') {
@@ -697,8 +710,52 @@
             document.getElementById('mainAppContent').style.display = 'block';
         }
 
-        function loadGroups() {
-            window.groups = loadFromLocalStorage();
+        async function loadGroups() {
+            try {
+                showNotification('Loading groups from cloud...', 'info');
+                
+                // REQUIRED: Load from Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
+                }
+
+                if (!window.currentUser) {
+                    console.warn('No user logged in, cannot load groups');
+                    window.groups = [];
+                    displayGroups();
+                    return;
+                }
+
+                // Fetch groups from Supabase
+                if (typeof window.fetchAllGroupsFromDatabase === 'function') {
+                    const groups = await window.fetchAllGroupsFromDatabase();
+                    window.groups = groups || [];
+                    
+                    // Cache in localStorage for offline access
+                    if (window.groups.length > 0) {
+                        localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
+                    }
+                    
+                    console.log('Loaded', window.groups.length, 'groups from Supabase');
+                    showNotification(`Loaded ${window.groups.length} groups`, 'success');
+                } else {
+                    throw new Error('fetchAllGroupsFromDatabase function not available');
+                }
+            } catch (error) {
+                console.error('Failed to load groups from Supabase:', error);
+                
+                // Fallback to localStorage cache if available
+                const cachedGroups = loadFromLocalStorage();
+                if (cachedGroups.length > 0) {
+                    console.warn('Using cached groups from localStorage');
+                    window.groups = cachedGroups;
+                    showNotification('Using cached data. Some features may be limited.', 'warning');
+                } else {
+                    window.groups = [];
+                    showNotification('Failed to load groups. Please check your connection.', 'error');
+                }
+            }
+            
             displayGroups();
         }
 
@@ -928,21 +985,33 @@
                 createdBy: window.currentUser.id
             };
 
-            window.groups.push(newGroup);
-            saveToLocalStorage();
-            displayGroups();
-            closeCreateGroupModal();
-
-            // Sync to database if available
-            if (typeof window.syncGroupToDatabase === 'function') {
-                try {
-                    await window.syncGroupToDatabase(newGroup);
-                } catch (error) {
-                    console.warn('Failed to sync group to database:', error);
+            try {
+                // REQUIRED: Save to Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
-            }
 
-            showNotification(`Group "${groupName}" created successfully!`, 'success');
+                if (typeof window.syncGroupToDatabase !== 'function') {
+                    throw new Error('syncGroupToDatabase function not available');
+                }
+
+                showNotification('Creating group in cloud...', 'info');
+                await window.syncGroupToDatabase(newGroup);
+                
+                // Add to local array and cache
+                window.groups.push(newGroup);
+                saveToLocalStorage();
+                displayGroups();
+                closeCreateGroupModal();
+                
+                showNotification(`Group "${groupName}" created successfully!`, 'success');
+                
+                // Reload groups from Supabase to ensure sync
+                await loadGroups();
+            } catch (error) {
+                console.error('Failed to create group in Supabase:', error);
+                showNotification('Failed to create group. Please check your connection.', 'error');
+            }
         }
 
         // ========================================
@@ -1156,25 +1225,27 @@
                 group.name = groupName;
                 group.members = allMembers;
 
-                // Update in localStorage
-                saveToLocalStorage();
-                displayGroups();
-
-                // Sync to database if available
-                if (typeof window.syncGroupToDatabase === 'function') {
-                    try {
-                        await window.syncGroupToDatabase(group);
-                        console.log('Group synced to database successfully');
-                    } catch (dbError) {
-                        console.warn('Database sync failed:', dbError);
-                        showNotification('Group updated locally, cloud sync failed', 'warning');
-                    }
+                // REQUIRED: Update in Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
 
-                // Close modal and reset
-                closeEditGroupModal();
+                if (typeof window.syncGroupToDatabase !== 'function') {
+                    throw new Error('syncGroupToDatabase function not available');
+                }
 
+                showNotification('Updating group in cloud...', 'info');
+                await window.syncGroupToDatabase(group);
+                
+                // Update in localStorage cache
+                saveToLocalStorage();
+                displayGroups();
+                closeEditGroupModal();
+                
                 showNotification('Group updated successfully!', 'success');
+                
+                // Reload groups from Supabase to ensure sync
+                await loadGroups();
 
                 console.log('Group updated successfully:', {
                     oldName,
@@ -1184,7 +1255,7 @@
 
             } catch (error) {
                 console.error('Failed to save group changes:', error);
-                showNotification('Failed to update group', 'error');
+                showNotification('Failed to update group. Please check your connection.', 'error');
             }
         }
 
@@ -1224,30 +1295,31 @@
             }
 
             try {
-                // Delete from database first (if online)
-                if (typeof window.deleteGroupFromDatabase === 'function') {
-                    try {
-                        await window.deleteGroupFromDatabase(editingGroupId);
-                        console.log('Group deleted from database');
-                    } catch (dbError) {
-                        console.warn('Database deletion failed:', dbError);
-                        showNotification('Failed to delete from cloud, but will delete locally', 'warning');
-                    }
+                // REQUIRED: Delete from Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
 
-                // Delete from local storage
+                if (typeof window.deleteGroupFromDatabase !== 'function') {
+                    throw new Error('deleteGroupFromDatabase function not available');
+                }
+
+                showNotification('Deleting group from cloud...', 'info');
+                await window.deleteGroupFromDatabase(editingGroupId);
+                
+                // Delete from local array and cache
                 window.groups = window.groups.filter(g => g.id !== editingGroupId);
                 saveToLocalStorage();
                 displayGroups();
-
-                // Close modal
                 closeEditGroupModal();
-
+                
                 showNotification('Group deleted successfully', 'success');
-
+                
+                // Reload groups from Supabase to ensure sync
+                await loadGroups();
             } catch (error) {
                 console.error('Failed to delete group:', error);
-                showNotification('Failed to delete group completely', 'error');
+                showNotification('Failed to delete group. Please check your connection.', 'error');
             }
         }
 
@@ -1259,24 +1331,29 @@
             if (!confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`)) return;
 
             try {
-                // Delete from database first (if online)
-                if (typeof window.deleteGroupFromDatabase === 'function') {
-                    await window.deleteGroupFromDatabase(groupId);
+                // REQUIRED: Delete from Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
 
-                // Delete from local storage
+                if (typeof window.deleteGroupFromDatabase !== 'function') {
+                    throw new Error('deleteGroupFromDatabase function not available');
+                }
+
+                showNotification('Deleting group from cloud...', 'info');
+                await window.deleteGroupFromDatabase(groupId);
+                
+                // Delete from local array and cache
                 window.groups = window.groups.filter(g => g.id !== groupId);
                 saveToLocalStorage();
                 displayGroups();
                 showNotification('Group deleted successfully', 'success');
+                
+                // Reload groups from Supabase to ensure sync
+                await loadGroups();
             } catch (error) {
                 console.error('Failed to delete group:', error);
-                showNotification('Failed to delete group from cloud. Deleted locally only.', 'warning');
-
-                // Still proceed with local deletion
-                window.groups = window.groups.filter(g => g.id !== groupId);
-                saveToLocalStorage();
-                displayGroups();
+                showNotification('Failed to delete group. Please check your connection.', 'error');
             }
         }
 

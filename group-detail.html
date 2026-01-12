@@ -449,18 +449,31 @@
         // ========================================
         // INITIALIZATION
         // ========================================
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('Group Detail Page Loading...');
             console.log('Current URL:', window.location.href);
             console.log('URL search:', window.location.search);
 
-            // Initialize Supabase if available
-            if (typeof window.initializeSupabase === 'function') {
-                try {
-                    window.initializeSupabase();
-                } catch (error) {
-                    console.warn('Supabase initialization failed:', error);
-                }
+            // REQUIRED: Initialize Supabase - app won't work without it
+            if (typeof window.initializeSupabase !== 'function') {
+                showNotification('Supabase initialization failed. Please check your configuration.', 'error');
+                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Configuration Error</h1><p>Supabase is required but not configured. Please check js/config.js</p></div>';
+                return;
+            }
+
+            const supabaseInitialized = window.initializeSupabase();
+            if (!supabaseInitialized) {
+                showNotification('Supabase initialization failed. Please check your connection and configuration.', 'error');
+                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Connection Error</h1><p>Cannot connect to Supabase. Please check your internet connection and js/config.js configuration.</p></div>';
+                return;
+            }
+
+            // Wait a moment for Supabase to fully initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (!window.supabaseClient) {
+                showNotification('Supabase client not available. Please refresh the page.', 'error');
+                return;
             }
 
             // CRITICAL: Initialize user session first
@@ -518,26 +531,86 @@
         // CORE FUNCTIONS - FIXED FOR EXPENSE PERSISTENCE
         // ========================================
 
-        // FIXED: Enhanced loadGroupData with persistent storage
+        // FIXED: Enhanced loadGroupData - Supabase first
         async function loadGroupData(groupId) {
             console.log('Loading group data for ID:', groupId);
 
-            // First try to load from localStorage - THIS IS CRITICAL
-            const groups = loadFromLocalStorage();
-            console.log('Loaded groups from localStorage:', groups.length, 'groups found');
+            // REQUIRED: Load from Supabase first
+            if (!window.supabaseClient) {
+                showNotification('Supabase not available. Please check your connection.', 'error');
+                // Fallback to localStorage cache
+                const groups = loadFromLocalStorage();
+                const foundGroup = groups.find(g => g.id === groupId);
+                if (foundGroup) {
+                    currentGroup = foundGroup;
+                    window.currentGroup = foundGroup;
+                    updateGroupDisplay();
+                    showNotification('Using cached data. Some features may be limited.', 'warning');
+                    return;
+                } else {
+                    showNotification('Group not found. Please check your connection.', 'error');
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                    return;
+                }
+            }
 
-            let foundGroup = groups.find(g => g.id === groupId);
+            try {
+                showNotification('Loading group from cloud...', 'info');
+                
+                if (typeof window.fetchGroupFromDatabase !== 'function') {
+                    throw new Error('fetchGroupFromDatabase function not available');
+                }
 
-            if (foundGroup) {
-                console.log('Group found in localStorage:', foundGroup.name);
-                console.log('Group has', foundGroup.expenses?.length || 0, 'expenses');
+                const fetchedGroup = await window.fetchGroupFromDatabase(groupId);
 
-                // CRITICAL: Set both currentGroup references
-                currentGroup = foundGroup;
-                window.currentGroup = foundGroup;
+                if (!fetchedGroup) {
+                    // Try localStorage cache as fallback
+                    const groups = loadFromLocalStorage();
+                    const cachedGroup = groups.find(g => g.id === groupId);
+                    if (cachedGroup) {
+                        currentGroup = cachedGroup;
+                        window.currentGroup = cachedGroup;
+                        updateGroupDisplay();
+                        showNotification('Using cached data. Please check your connection.', 'warning');
+                        return;
+                    }
+                    throw new Error('Group not found');
+                }
 
-                // Update display immediately with local data
+                // Cache in localStorage
+                const localGroups = loadFromLocalStorage();
+                const existingIndex = localGroups.findIndex(g => g.id === groupId);
+                if (existingIndex >= 0) {
+                    localGroups[existingIndex] = fetchedGroup;
+                } else {
+                    localGroups.push(fetchedGroup);
+                }
+                saveGroupsToLocalStorage(localGroups);
+
+                // Set as current group
+                currentGroup = fetchedGroup;
+                window.currentGroup = fetchedGroup;
                 updateGroupDisplay();
+                
+                showNotification('Group loaded successfully', 'success');
+                return;
+            } catch (error) {
+                console.error('Failed to load group from Supabase:', error);
+                
+                // Fallback to localStorage cache
+                const groups = loadFromLocalStorage();
+                const foundGroup = groups.find(g => g.id === groupId);
+                if (foundGroup) {
+                    currentGroup = foundGroup;
+                    window.currentGroup = foundGroup;
+                    updateGroupDisplay();
+                    showNotification('Using cached data. Some features may be limited.', 'warning');
+                    return;
+                }
+                
+                // If still not found, show error
+                showNotification('Failed to load group. Please check your connection.', 'error');
+                setTimeout(() => window.location.href = 'index.html', 2000);
                 return;
             }
 
@@ -1091,28 +1164,38 @@
             currentGroup.totalExpenses = (currentGroup.totalExpenses || 0) + parseFloat(amount);
             console.log('New total expenses:', formatCurrency(currentGroup.totalExpenses));
 
-            // CRITICAL: Save to storage immediately
-            updateGroupInStorage();
-
-            // Update UI
-            displayExpenses();
-            calculateBalances();
-            safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses));
-
-            // Close modal
-            closeAddExpenseModal();
-
-            // Sync to database if available
-            if (typeof window.syncExpenseToDatabase === 'function') {
-                try {
-                    await window.syncExpenseToDatabase(newExpense, currentGroup.id);
-                    console.log('Expense synced to database');
-                } catch (error) {
-                    console.warn('Failed to sync expense to database:', error);
+            try {
+                // REQUIRED: Save to Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
-            }
 
-            showNotification('Expense added successfully!', 'success');
+                if (typeof window.syncExpenseToDatabase !== 'function') {
+                    throw new Error('syncExpenseToDatabase function not available');
+                }
+
+                showNotification('Saving expense to cloud...', 'info');
+                await window.syncExpenseToDatabase(newExpense, currentGroup.id);
+                
+                // CRITICAL: Save to storage cache
+                updateGroupInStorage();
+
+                // Update UI
+                displayExpenses();
+                calculateBalances();
+                safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses));
+
+                // Close modal
+                closeAddExpenseModal();
+                
+                showNotification('Expense added successfully!', 'success');
+                
+                // Reload group from Supabase to ensure sync
+                await loadGroupData(currentGroup.id);
+            } catch (error) {
+                console.error('Failed to save expense:', error);
+                showNotification('Failed to save expense. Please check your connection.', 'error');
+            }
         }
 
         // ========================================
@@ -1194,22 +1277,30 @@
                 // Update total
                 currentGroup.totalExpenses = (currentGroup.totalExpenses || 0) - oldAmount + newAmount;
 
-                // CRITICAL: Save to storage
+                // REQUIRED: Save to Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
+                }
+
+                if (typeof window.syncExpenseToDatabase !== 'function') {
+                    throw new Error('syncExpenseToDatabase function not available');
+                }
+
+                showNotification('Updating expense in cloud...', 'info');
+                await window.syncExpenseToDatabase(currentGroup.expenses[expenseIndex], currentGroup.id);
+                
+                // CRITICAL: Save to storage cache
                 updateGroupInStorage();
 
                 // Update UI
                 displayExpenses();
                 calculateBalances();
                 safeUpdateElement('totalExpensesAmount', formatCurrency(currentGroup.totalExpenses));
-
-                // Sync to database
-                if (typeof window.syncExpenseToDatabase === 'function') {
-                    try {
-                        await window.syncExpenseToDatabase(currentGroup.expenses[expenseIndex], currentGroup.id);
-                    } catch (error) {
-                        console.warn('Failed to sync expense to database:', error);
-                    }
-                }
+                
+                showNotification('Expense updated successfully!', 'success');
+                
+                // Reload group from Supabase to ensure sync
+                await loadGroupData(currentGroup.id);
 
                 closeEditExpenseModal();
                 showNotification('Expense updated successfully!', 'success');
@@ -1227,18 +1318,18 @@
             if (!confirm(`Are you sure you want to delete the expense "${expense.name}"?`)) return;
 
             try {
-                showNotification('Deleting expense...', 'info');
-
-                // Delete from database first if available
-                if (typeof window.deleteExpenseFromDatabase === 'function') {
-                    try {
-                        await window.deleteExpenseFromDatabase(expenseId);
-                        console.log('Expense deleted from database');
-                    } catch (error) {
-                        console.warn('Database deletion failed:', error);
-                    }
+                // REQUIRED: Delete from Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
 
+                if (typeof window.deleteExpenseFromDatabase !== 'function') {
+                    throw new Error('deleteExpenseFromDatabase function not available');
+                }
+
+                showNotification('Deleting expense from cloud...', 'info');
+                await window.deleteExpenseFromDatabase(expenseId);
+                
                 // Delete from local data
                 const expenseIndex = currentGroup.expenses.findIndex(e => e.id === expenseId);
                 if (expenseIndex !== -1) {
@@ -1246,7 +1337,7 @@
                     currentGroup.expenses.splice(expenseIndex, 1);
                     currentGroup.totalExpenses = Math.max(0, (currentGroup.totalExpenses || 0) - parseFloat(deletedExpense.amount));
 
-                    // CRITICAL: Save changes immediately
+                    // CRITICAL: Save changes to cache
                     updateGroupInStorage();
 
                     // Update UI
@@ -1436,17 +1527,20 @@
                 currentGroup = group;
                 window.currentGroup = group;
 
-                // CRITICAL: Save to storage
-                updateGroupInStorage();
-
-                // Sync to database if available
-                if (typeof window.syncGroupToDatabase === 'function') {
-                    try {
-                        await window.syncGroupToDatabase(group);
-                    } catch (dbError) {
-                        console.warn('Database sync failed:', dbError);
-                    }
+                // REQUIRED: Save to Supabase first
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not available');
                 }
+
+                if (typeof window.syncGroupToDatabase !== 'function') {
+                    throw new Error('syncGroupToDatabase function not available');
+                }
+
+                showNotification('Updating group in cloud...', 'info');
+                await window.syncGroupToDatabase(group);
+                
+                // CRITICAL: Save to storage cache
+                updateGroupInStorage();
 
                 // Update UI
                 updateGroupDisplay();

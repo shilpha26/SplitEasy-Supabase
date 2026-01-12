@@ -286,6 +286,106 @@ async function syncExpenseToDatabase(expense, groupId) {
     }
 }
 
+// Fetch all groups for the current user from database
+async function fetchAllGroupsFromDatabase() {
+    console.log('fetchAllGroupsFromDatabase called');
+
+    if (!window.supabaseClient || !window.currentUser) {
+        console.warn('Cannot fetch groups - no Supabase client or user');
+        return [];
+    }
+
+    // Ensure schema is detected
+    await detectDatabaseSchema();
+
+    try {
+        console.log('Fetching all groups from database for user:', window.currentUser.id);
+
+        const groupSchema = SCHEMA_MAPPING.groups;
+
+        // Fetch groups where user is a member
+        // Try different approaches: check members array or use group_members table
+        const { data: groups, error: groupsError } = await window.supabaseClient
+            .from('groups')
+            .select('*')
+            .order(groupSchema.createdAt || 'created_at', { ascending: false });
+
+        if (groupsError) {
+            console.error('Groups fetch error:', groupsError);
+            throw groupsError;
+        }
+
+        if (!groups || groups.length === 0) {
+            console.log('No groups found in database');
+            return [];
+        }
+
+        console.log('Found', groups.length, 'groups in database');
+
+        // Filter groups where user is a member (check members array)
+        const userGroups = groups.filter(group => {
+            const members = group[groupSchema.members] || group[groupSchema.participants] || group.members || [];
+            return Array.isArray(members) && members.includes(window.currentUser.id);
+        });
+
+        console.log('User is a member of', userGroups.length, 'groups');
+
+        // Fetch expenses for each group
+        const expenseSchema = SCHEMA_MAPPING.expenses;
+        const completeGroups = await Promise.all(userGroups.map(async (group) => {
+            try {
+                const { data: expenses, error: expensesError } = await window.supabaseClient
+                    .from('expenses')
+                    .select('*')
+                    .eq(expenseSchema.groupId, group[groupSchema.id] || group.id)
+                    .order(expenseSchema.createdAt || 'created_at', { ascending: false });
+
+                if (expensesError) {
+                    console.warn('Failed to fetch expenses for group', group[groupSchema.id], ':', expensesError);
+                }
+
+                // Structure the group data properly
+                const completeGroup = {
+                    id: group[groupSchema.id] || group.id,
+                    name: group[groupSchema.name] || group.name,
+                    members: group[groupSchema.members] || group[groupSchema.participants] || [],
+                    expenses: expenses ? expenses.map(expense => ({
+                        id: expense[expenseSchema.id] || expense.id,
+                        name: expense[expenseSchema.description] || expense.description || expense.name,
+                        amount: parseFloat(expense[expenseSchema.amount] || expense.amount || 0),
+                        paidBy: expense[expenseSchema.paidBy] || expense.paid_by || expense.paidby,
+                        splitBetween: expense[expenseSchema.splitBetween] || expense.split_between || expense.splitbetween || [],
+                        date: expense[expenseSchema.createdAt] || expense.created_at || expense.createdat,
+                        perPersonAmount: expense[expenseSchema.perPersonAmount] || expense.per_person_amount || expense.perpersonamount || 0
+                    })) : [],
+                    totalExpenses: 0,
+                    createdAt: group[groupSchema.createdAt] || group.created_at || group.createdat,
+                    createdBy: group[groupSchema.createdBy] || group.created_by || group.createdby
+                };
+
+                // Calculate total expenses
+                if (completeGroup.expenses) {
+                    completeGroup.totalExpenses = completeGroup.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+                }
+
+                return completeGroup;
+            } catch (error) {
+                console.error('Error processing group', group[groupSchema.id], ':', error);
+                return null;
+            }
+        }));
+
+        // Filter out null results
+        const validGroups = completeGroups.filter(g => g !== null);
+        console.log('Successfully loaded', validGroups.length, 'complete groups from database');
+        return validGroups;
+
+    } catch (error) {
+        console.error('Failed to fetch all groups from database:', error);
+        throw error;
+    }
+}
+
 // FIXED: Schema-aware group fetching
 async function fetchGroupFromDatabase(groupId) {
     console.log('fetchGroupFromDatabase called with ID:', groupId);
@@ -841,6 +941,7 @@ window.stopRealtimeSync = function() {
 };
 
 // Make all functions globally available
+window.fetchAllGroupsFromDatabase = fetchAllGroupsFromDatabase;
 window.fetchGroupFromDatabase = fetchGroupFromDatabase;
 window.deleteExpenseFromDatabase = deleteExpenseFromDatabase;
 window.deleteGroupFromDatabase = deleteGroupFromDatabase;
