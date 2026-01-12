@@ -13,7 +13,7 @@ let SUPABASECONFIG = null;
 if ((typeof SUPABASECONFIG === 'undefined' || SUPABASECONFIG === null) &&
     (typeof window.SUPABASECONFIG === 'undefined' || window.SUPABASECONFIG === null)) {
     console.warn('⚠️ Supabase config not found. Supabase features will be disabled.');
-    console.warn('📝 Please create js/config.js from js/config.example.js and add your credentials.');
+    console.warn('📝 Please create js/config.js with your Supabase credentials.');
     console.warn('📝 For GitHub Pages: You need to manually add config.js to your repository (or use GitHub Secrets)');
     // Create a dummy config to prevent errors
     SUPABASECONFIG = {
@@ -65,7 +65,7 @@ window.initializeSupabase = function() {
             SUPABASECONFIG.url === 'YOUR_SUPABASE_URL_HERE' || 
             SUPABASECONFIG.anonKey === 'YOUR_SUPABASE_ANON_KEY_HERE') {
             console.warn('Invalid Supabase configuration. Please check js/config.js');
-            console.warn('Copy js/config.example.js to js/config.js and add your credentials.');
+            console.warn('Create js/config.js with your Supabase credentials.');
             isOffline = true;
             return false;
         }

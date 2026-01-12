@@ -41,8 +41,13 @@ A modern, offline-first expense splitting application built with vanilla JavaScr
 
 ### Option 2: Manual Config (Quick Start)
 
-1. Copy `js/config.example.js` to `js/config.js`
-2. Add your Supabase credentials to `js/config.js`
+1. Create `js/config.js` with your Supabase credentials:
+   ```javascript
+   window.SUPABASECONFIG = {
+       url: 'https://your-project.supabase.co',
+       anonKey: 'your-anon-key-here'
+   };
+   ```
 3. Start a local server:
    ```bash
    python -m http.server 8000
@@ -78,8 +83,7 @@ A modern, offline-first expense splitting application built with vanilla JavaScr
 3. Run `npm run generate-config` to generate `js/config.js`
 
 **Manual Configuration:**
-1. Copy `js/config.example.js` to `js/config.js`
-2. Add your Supabase credentials
+1. Create `js/config.js` with your Supabase credentials (see Option 2 above)
 
 ### GitHub Pages Deployment
 

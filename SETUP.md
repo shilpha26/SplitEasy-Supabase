@@ -25,8 +25,16 @@ node scripts/generate-config.js
 ```
 
 **Option C: Manual (if you don't have Node.js)**
-1. Copy `js/config.example.js` to `js/config.js`
-2. Edit `js/config.js` and replace the placeholder values with your credentials
+1. Create `js/config.js` with this content:
+   ```javascript
+   if (typeof window !== 'undefined' && (typeof window.SUPABASECONFIG === 'undefined' || window.SUPABASECONFIG === null)) {
+       window.SUPABASECONFIG = {
+           url: 'YOUR_SUPABASE_URL',
+           anonKey: 'YOUR_SUPABASE_ANON_KEY'
+       };
+   }
+   ```
+2. Replace the placeholder values with your actual credentials
 
 ### Step 3: Start the server
 

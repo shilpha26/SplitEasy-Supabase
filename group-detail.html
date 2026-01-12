@@ -289,7 +289,7 @@
                 script.onerror = function() {
                     console.error('❌ Failed to load js/config.js - file not found');
                     console.error('⚠️ This is normal if config.js is gitignored');
-                    console.error('📝 For local development: Copy js/config.example.js to js/config.js and add your credentials');
+                    console.error('📝 For local development: Create js/config.js with your Supabase credentials');
                     console.error('📝 For GitHub Pages: You need to manually add config.js to your repository');
                     // Create a placeholder config to prevent errors
                     window.SUPABASECONFIG = {
