@@ -474,7 +474,8 @@
                     // Don't redirect immediately - might be a shared link
                 }
             } else {
-                console.warn('No user session found');
+                console.warn('No user session found - will create guest user if needed');
+                // Don't create user yet - wait to see if group is in localStorage
             }
 
             // Get group ID from URL with enhanced debugging
@@ -544,27 +545,48 @@
             console.log('Group not found locally, checking database...');
             showNotification('Loading group from link...', 'info');
 
+            // Auto-create guest user if no user exists
             if (!window.currentUser) {
-                showNotification('Please log in to join this group', 'error');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
-                return;
+                console.log('No user found, creating guest user for shared link access...');
+                const guestUserId = 'guest_' + Date.now();
+                const guestUser = {
+                    id: guestUserId,
+                    name: 'Guest',
+                    createdAt: new Date().toISOString(),
+                    isGuest: true
+                };
+                localStorage.setItem('spliteasy_current_user', JSON.stringify(guestUser));
+                window.currentUser = guestUser;
+                console.log('Guest user created:', guestUserId);
             }
 
             try {
+                // Check if Supabase is available
+                if (!window.supabaseClient) {
+                    console.warn('Supabase not available, trying to initialize...');
+                    if (typeof window.initializeSupabase === 'function') {
+                        window.initializeSupabase();
+                        // Wait a bit for initialization
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+
                 // Fetch group from database
                 if (typeof window.fetchGroupFromDatabase !== 'function') {
-                    throw new Error('Database functions not available');
+                    throw new Error('Database functions not available. Please check your internet connection.');
+                }
+
+                if (!window.supabaseClient) {
+                    throw new Error('Database connection not available. Please check your internet connection.');
                 }
 
                 const fetchedGroup = await window.fetchGroupFromDatabase(groupId);
 
                 if (!fetchedGroup) {
-                    showNotification('Group not found or access denied', 'error');
+                    showNotification('Group not found. The link may be invalid or the group was deleted.', 'error');
                     setTimeout(() => {
                         window.location.href = 'index.html';
-                    }, 2000);
+                    }, 3000);
                     return;
                 }
 
@@ -573,23 +595,26 @@
                     `Do you want to join the group "${fetchedGroup.name}"?\n\n` +
                     `Members: ${fetchedGroup.members.join(', ')}\n` +
                     `Expenses: ${fetchedGroup.expenses?.length || 0}\n` +
-                    `Total: ${formatCurrency(fetchedGroup.totalExpenses)}`
+                    `Total: ${formatCurrency(fetchedGroup.totalExpenses || 0)}\n\n` +
+                    `Click OK to join, or Cancel to view only.`
                 );
 
                 if (!joinConfirm) {
-                    showNotification('Group join cancelled', 'info');
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1500);
+                    // Allow viewing without joining
+                    console.log('User chose to view without joining');
+                    currentGroup = fetchedGroup;
+                    window.currentGroup = fetchedGroup;
+                    updateGroupDisplay();
+                    showNotification('Viewing group (read-only). Join to edit.', 'info');
                     return;
                 }
 
-                // Join user to group in database
-                const joined = await window.joinUserToGroup(groupId, window.currentUser.id);
-
-                if (!joined) {
-                    showNotification('Failed to join group. Please try again.', 'error');
-                    return;
+                // Join user to group in database (only if not guest)
+                if (!window.currentUser.isGuest && typeof window.joinUserToGroup === 'function') {
+                    const joined = await window.joinUserToGroup(groupId, window.currentUser.id);
+                    if (!joined) {
+                        console.warn('Failed to join group in database, but continuing with local access');
+                    }
                 }
 
                 // Add user to local group data
@@ -599,7 +624,12 @@
 
                 // CRITICAL: Save group locally with proper structure
                 const localGroups = loadFromLocalStorage();
-                localGroups.push(fetchedGroup);
+                const existingIndex = localGroups.findIndex(g => g.id === groupId);
+                if (existingIndex >= 0) {
+                    localGroups[existingIndex] = fetchedGroup;
+                } else {
+                    localGroups.push(fetchedGroup);
+                }
                 saveGroupsToLocalStorage(localGroups);
 
                 // Set as current group
@@ -611,10 +641,21 @@
 
             } catch (error) {
                 console.error('Failed to load group from share link:', error);
-                showNotification('Failed to load group. Please check your connection.', 'error');
+                const errorMessage = error.message || 'Unknown error';
+                
+                // More helpful error messages
+                if (errorMessage.includes('connection') || errorMessage.includes('network') || errorMessage.includes('fetch')) {
+                    showNotification('Connection error. Please check your internet connection and try again.', 'error');
+                } else if (errorMessage.includes('not available')) {
+                    showNotification('Database service unavailable. Please try again later.', 'error');
+                } else {
+                    showNotification('Failed to load group. Please check your connection and try again.', 'error');
+                }
+                
+                // Don't redirect immediately - give user time to read error
                 setTimeout(() => {
                     window.location.href = 'index.html';
-                }, 2000);
+                }, 4000);
             }
         }
 
