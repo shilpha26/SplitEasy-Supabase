@@ -8,6 +8,16 @@ console.log('Loading enhanced SplitEasy Supabase integration...');
 // If config.js doesn't exist, Supabase features will be disabled
 let SUPABASECONFIG = null;
 
+// Function to get the current config (always reads from window)
+function getSupabaseConfig() {
+    if (typeof window !== 'undefined' && window.SUPABASECONFIG) {
+        if (window.SUPABASECONFIG.url && window.SUPABASECONFIG.anonKey) {
+            return window.SUPABASECONFIG;
+        }
+    }
+    return null;
+}
+
 // Configuration is loaded from js/config.js (loaded before this script)
 // Check both window.SUPABASECONFIG and global SUPABASECONFIG
 if ((typeof SUPABASECONFIG === 'undefined' || SUPABASECONFIG === null) &&
