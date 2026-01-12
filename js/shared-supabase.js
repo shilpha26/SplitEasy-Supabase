@@ -9,14 +9,22 @@ console.log('Loading enhanced SplitEasy Supabase integration...');
 let SUPABASECONFIG = null;
 
 // Configuration is loaded from js/config.js (loaded before this script)
-if (typeof SUPABASECONFIG === 'undefined' || SUPABASECONFIG === null) {
-    console.warn('Supabase config not found. Supabase features will be disabled.');
-    console.warn('Please create js/config.js from js/config.example.js and add your credentials.');
+// Check both window.SUPABASECONFIG and global SUPABASECONFIG
+if ((typeof SUPABASECONFIG === 'undefined' || SUPABASECONFIG === null) &&
+    (typeof window.SUPABASECONFIG === 'undefined' || window.SUPABASECONFIG === null)) {
+    console.warn('⚠️ Supabase config not found. Supabase features will be disabled.');
+    console.warn('📝 Please create js/config.js from js/config.example.js and add your credentials.');
+    console.warn('📝 For GitHub Pages: You need to manually add config.js to your repository (or use GitHub Secrets)');
     // Create a dummy config to prevent errors
     SUPABASECONFIG = {
         url: '',
         anonKey: ''
     };
+} else {
+    // Use window.SUPABASECONFIG if available (loaded via script tag with error handling)
+    if (typeof window.SUPABASECONFIG !== 'undefined' && window.SUPABASECONFIG !== null) {
+        SUPABASECONFIG = window.SUPABASECONFIG;
+    }
 }
 
 // Global Supabase variables
