@@ -485,6 +485,10 @@
                 createdAt: new Date().toISOString()
             };
 
+            // Get return URL early (before try block) to avoid scope issues
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnTo = sessionStorage.getItem('returnToAfterSignup') || urlParams.get('returnTo');
+
             try {
                 // Try to create user in database if available (optional - app works without users table)
                 if (typeof window.createUserInDatabase === 'function' && window.supabaseClient) {
@@ -514,8 +518,7 @@
 
                 showNotification(`Welcome, ${userName}!`);
                 
-                // Check if there's a return URL (from shared link)
-                const returnTo = sessionStorage.getItem('returnToAfterSignup') || urlParams.get('returnTo');
+                // Redirect if there's a return URL (from shared link)
                 if (returnTo) {
                     sessionStorage.removeItem('returnToAfterSignup');
                     setTimeout(() => {
@@ -533,6 +536,14 @@
                 showMainContent();
                 await loadGroups();
                 showNotification(`Welcome, ${userName}! (offline mode)`);
+                
+                // Also handle return URL in catch block
+                if (returnTo) {
+                    sessionStorage.removeItem('returnToAfterSignup');
+                    setTimeout(() => {
+                        window.location.href = decodeURIComponent(returnTo);
+                    }, 1500);
+                }
             }
         }
 
@@ -1525,7 +1536,12 @@
 if ('serviceWorker' in navigator) {
   console.log('Registering service worker...');
 
-  navigator.serviceWorker.register('/sw.js')
+  // Detect base path for GitHub Pages subdirectory
+  const basePath = window.location.pathname.split('/').slice(0, -1).join('/') || '';
+  const swPath = basePath ? `${basePath}/sw.js` : '/sw.js';
+  console.log('Service worker path:', swPath);
+
+  navigator.serviceWorker.register(swPath)
     .then(registration => {
       console.log('Service worker registered:', registration);
 

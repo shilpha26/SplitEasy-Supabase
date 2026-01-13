@@ -240,21 +240,21 @@ window.deleteUserFromDatabase = async function(userId) {
     try {
         console.log('Deleting user from database:', userId);
 
-        // Delete user's expenses first
+        // Delete user's expenses first (use created_by column)
         const { error: expenseError } = await window.supabaseClient
             .from('expenses')
             .delete()
-            .eq('createdby', userId);
+            .eq('created_by', userId);
 
         if (expenseError) {
             console.warn('Failed to delete user expenses:', expenseError);
         }
 
-        // Delete user's groups
+        // Delete user's groups (use created_by column)
         const { error: groupError } = await window.supabaseClient
             .from('groups')
             .delete()
-            .eq('createdby', userId);
+            .eq('created_by', userId);
 
         if (groupError) {
             console.warn('Failed to delete user groups:', groupError);

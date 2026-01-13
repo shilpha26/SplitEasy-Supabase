@@ -1,21 +1,38 @@
 // Force cache update by incrementing version
-const CACHE_VERSION = 'spliteasy-v1768225000000'; // Fixed uuidRegex duplicate declaration
+const CACHE_VERSION = 'spliteasy-v1768229000000'; // GitHub Pages cache fix - force refresh
 const CACHE_NAME = CACHE_VERSION;
 
 console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);
 
-// Updated file list with your new enhanced files
+// Detect base path for GitHub Pages subdirectory
+const getBasePath = () => {
+  const path = self.location.pathname;
+  // If path contains more than just '/', extract base path
+  // e.g., '/SplitEasy-Supabase/sw.js' -> '/SplitEasy-Supabase'
+  const parts = path.split('/').filter(p => p);
+  if (parts.length > 1) {
+    // Remove 'sw.js' if present, keep the base path
+    const baseParts = parts.slice(0, -1);
+    return '/' + baseParts.join('/');
+  }
+  return '';
+};
+
+const BASE_PATH = getBasePath();
+console.log('🔄 Service Worker Base Path:', BASE_PATH || '(root)');
+
+// Updated file list with your new enhanced files (relative to base path)
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/group-detail.html',
-  '/css/style.css',
-  '/js/script.js',
-  '/js/shared-utils.js',
-  '/js/shared-supabase.js',
-  '/js/shared-sync.js',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  BASE_PATH || '/',
+  BASE_PATH + '/index.html',
+  BASE_PATH + '/group-detail.html',
+  BASE_PATH + '/css/style.css',
+  BASE_PATH + '/js/script.js',
+  BASE_PATH + '/js/shared-utils.js',
+  BASE_PATH + '/js/shared-supabase.js',
+  BASE_PATH + '/js/shared-sync.js',
+  BASE_PATH + '/icons/icon-192x192.png',
+  BASE_PATH + '/icons/icon-512x512.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js'
 ];
@@ -109,7 +126,7 @@ self.addEventListener('fetch', event => {
         .catch(() => {
           console.log('📱 SplitEasy: Network failed, serving from cache:', event.request.url);
           return caches.match(event.request).then(response => {
-            return response || caches.match('/index.html');
+            return response || caches.match(BASE_PATH + '/index.html' || '/index.html');
           });
         })
     );
@@ -147,7 +164,7 @@ self.addEventListener('fetch', event => {
         console.log('❌ SplitEasy: Network failed, serving offline page');
         // Return a custom offline page if available
         if (event.request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match(BASE_PATH + '/index.html' || '/index.html');
         }
       })
   );

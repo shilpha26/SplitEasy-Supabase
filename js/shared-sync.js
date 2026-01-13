@@ -623,7 +623,7 @@ async function fetchAllGroupsFromDatabase() {
                 console.error('Error processing group', group[groupSchema.id], ':', error);
                 return null;
             }
-        }));
+        }); // End of userGroups.map
 
         // Filter out null results
         const validGroups = completeGroups.filter(g => g !== null);
