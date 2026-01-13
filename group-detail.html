@@ -598,22 +598,100 @@
                                 .eq('id', groupId)
                                 .maybeSingle();
                             
-                            if (directGroup && !directError) {
-                                console.log('Group found via shared link, joining user...');
-                                // Group exists, join the user and then load it
-                                await joinGroupFromSharedLink(directGroup, groupId);
-                                // After joining, fetch again to get the complete group with expenses
-                                const joinedGroup = await window.fetchGroupFromDatabase(groupId);
-                                if (joinedGroup) {
-                                    currentGroup = joinedGroup;
-                                    window.currentGroup = joinedGroup;
-                                    updateGroupDisplay();
-                                    showNotification('Joined group successfully!', 'success');
-                                    return;
+                            if (directError) {
+                                console.error('Error fetching group directly:', directError);
+                                throw new Error(`Database error: ${directError.message}`);
+                            }
+                            
+                            if (directGroup) {
+                                console.log('Group found via shared link:', directGroup);
+                                
+                                // Ensure schema is detected
+                                if (typeof window.detectDatabaseSchema === 'function') {
+                                    await window.detectDatabaseSchema();
                                 }
+                                
+                                // Get schema mappings with fallbacks
+                                const expenseSchema = (window.SCHEMA_MAPPING?.expenses || {});
+                                const groupSchema = (window.SCHEMA_MAPPING?.groups || {});
+                                
+                                // Fetch expenses for this group
+                                const groupIdColumn = expenseSchema.groupId || 'group_id';
+                                const { data: expenses, error: expensesError } = await window.supabaseClient
+                                    .from('expenses')
+                                    .select('*')
+                                    .eq(groupIdColumn, groupId)
+                                    .order(expenseSchema.createdAt || 'created_at', { ascending: false });
+                                
+                                if (expensesError) {
+                                    console.warn('Error fetching expenses:', expensesError);
+                                }
+                                
+                                // Handle members array (might be JSONB string)
+                                let members = directGroup[groupSchema.members] || directGroup.members || [];
+                                if (typeof members === 'string') {
+                                    try {
+                                        members = JSON.parse(members);
+                                    } catch (e) {
+                                        console.warn('Failed to parse members JSON:', e);
+                                        members = [];
+                                    }
+                                }
+                                if (!Array.isArray(members)) {
+                                    members = [];
+                                }
+                                
+                                // Structure the group data properly
+                                const structuredGroup = {
+                                    id: directGroup[groupSchema.id] || directGroup.id,
+                                    supabaseId: directGroup[groupSchema.id] || directGroup.id,
+                                    name: directGroup[groupSchema.name] || directGroup.name,
+                                    members: members,
+                                    expenses: (expenses || []).map(exp => ({
+                                        id: exp[expenseSchema.id] || exp.id,
+                                        name: exp[expenseSchema.description] || exp.description || exp.name,
+                                        amount: parseFloat(exp[expenseSchema.amount] || exp.amount || 0),
+                                        paidBy: exp[expenseSchema.paidBy] || exp.paid_by || exp.paidby,
+                                        splitBetween: exp[expenseSchema.splitBetween] || exp.split_between || [],
+                                        date: exp[expenseSchema.createdAt] || exp.created_at || exp.createdat,
+                                        perPersonAmount: exp[expenseSchema.perPersonAmount] || exp.per_person_amount || 0,
+                                        supabaseId: exp[expenseSchema.id] || exp.id
+                                    })),
+                                    totalExpenses: 0,
+                                    createdAt: directGroup[groupSchema.createdAt] || directGroup.created_at || directGroup.createdat,
+                                    createdBy: directGroup[groupSchema.createdBy] || directGroup.created_by || directGroup.createdby
+                                };
+                                
+                                // Calculate total expenses
+                                structuredGroup.totalExpenses = structuredGroup.expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+                                
+                                // Join user to group
+                                console.log('Joining user to group...');
+                                await joinGroupFromSharedLink(structuredGroup, groupId);
+                                
+                                // Set as current group and display
+                                currentGroup = structuredGroup;
+                                window.currentGroup = structuredGroup;
+                                
+                                // Save to localStorage
+                                const localGroups = loadFromLocalStorage();
+                                const existingIndex = localGroups.findIndex(g => g.id === groupId || g.supabaseId === groupId);
+                                if (existingIndex >= 0) {
+                                    localGroups[existingIndex] = structuredGroup;
+                                } else {
+                                    localGroups.push(structuredGroup);
+                                }
+                                saveGroupsToLocalStorage(localGroups);
+                                
+                                updateGroupDisplay();
+                                showNotification('Joined group successfully!', 'success');
+                                return;
+                            } else {
+                                console.log('Group not found in database with ID:', groupId);
                             }
                         } catch (shareError) {
-                            console.error('Error fetching shared link group:', shareError);
+                            console.error('Error processing shared link group:', shareError);
+                            // Don't throw here, let it fall through to cache check
                         }
                     }
                     
