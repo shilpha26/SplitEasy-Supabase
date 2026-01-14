@@ -1914,22 +1914,52 @@
             const participants = Array.isArray(group.participants) ? group.participants : [];
             const memberIds = Array.isArray(group.members) ? group.members : [];
             
-            const participantNames = participants.filter(p => {
-                // Filter out IDs - check if this matches any registered member ID
-                if (typeof p !== 'string') return false;
+            // Helper to convert ID to name
+            const getIdToName = (id) => {
+                // Check if it's the current user
+                if (window.currentUser && window.currentUser.id === id) {
+                    return window.currentUser.name;
+                }
                 
-                // Check if this is a registered member ID
+                // Try to get from localStorage
+                try {
+                    const previousUsers = JSON.parse(localStorage.getItem('spliteasy_previous_users') || '[]');
+                    const user = previousUsers.find(u => u.id === id);
+                    if (user) return user.name;
+                } catch (e) {
+                    // Ignore
+                }
+                
+                return null;
+            };
+            
+            const participantNames = participants.map(p => {
+                // First, try to convert IDs to names
+                if (typeof p !== 'string') return null;
+                
+                // Check if this is a registered member ID (in members array)
                 if (memberIds.includes(p)) {
-                    return false; // This is a registered member ID, not a participant name
+                    return null; // This is a registered member ID, filter it out
                 }
                 
-                // Also filter out UUIDs and IDs with "user" pattern
+                // Check if p looks like an ID (pattern: letters followed by numbers, like "kaladeep0226")
+                if (/^[a-zA-Z]+\d+$/.test(p)) {
+                    const name = getIdToName(p);
+                    if (name) {
+                        // If we found a name, this is actually a registered member ID - filter it out
+                        return null;
+                    }
+                    // If we can't convert it but it looks like an ID, filter it out anyway
+                    return null;
+                }
+                
+                // Filter out UUIDs and IDs with "user" pattern
                 if (p.includes('user') || p.length > 30 || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p)) {
-                    return false; // This looks like an ID
+                    return null; // This looks like an ID
                 }
                 
-                return true; // This looks like a participant name
-            });
+                return p; // This looks like a participant name
+            }).filter(p => p !== null); // Remove nulls (filtered out IDs)
             
             if (participantNames.length === 0) {
                 grid.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem;">No participants yet. Add participants below.</p>';

@@ -1293,11 +1293,74 @@
                 return;
             }
 
-            console.log('Setting up edit members for:', group.members);
+            // Clear dynamic members container
+            const dynamicContainer = document.getElementById('editDynamicMembers');
+            if (dynamicContainer) {
+                dynamicContainer.innerHTML = '';
+            }
 
-            grid.innerHTML = group.members.map(member => `
-                <div class="selectable-box selected" data-member="${member}">
-                    ${member}
+            // Show only participants (manually added names), not registered members
+            // Filter out IDs by checking if they match any registered member IDs
+            const participants = Array.isArray(group.participants) ? group.participants : [];
+            const memberIds = Array.isArray(group.members) ? group.members : [];
+            
+            // Helper to convert ID to name
+            const getIdToName = (id) => {
+                // Check if it's the current user
+                if (window.currentUser && window.currentUser.id === id) {
+                    return window.currentUser.name;
+                }
+                
+                // Try to get from localStorage
+                try {
+                    const previousUsers = JSON.parse(localStorage.getItem('spliteasy_previous_users') || '[]');
+                    const user = previousUsers.find(u => u.id === id);
+                    if (user) return user.name;
+                } catch (e) {
+                    // Ignore
+                }
+                
+                return null;
+            };
+            
+            const participantNames = participants.map(p => {
+                // First, try to convert IDs to names
+                if (typeof p !== 'string') return null;
+                
+                // Check if this is a registered member ID (in members array)
+                if (memberIds.includes(p)) {
+                    return null; // This is a registered member ID, filter it out
+                }
+                
+                // Check if p looks like an ID (pattern: letters followed by numbers, like "kaladeep0226")
+                if (/^[a-zA-Z]+\d+$/.test(p)) {
+                    const name = getIdToName(p);
+                    if (name) {
+                        // If we found a name, this is actually a registered member ID - filter it out
+                        return null;
+                    }
+                    // If we can't convert it but it looks like an ID, filter it out anyway
+                    return null;
+                }
+                
+                // Filter out UUIDs and IDs with "user" pattern
+                if (p.includes('user') || p.length > 30 || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p)) {
+                    return null; // This looks like an ID
+                }
+                
+                return p; // This looks like a participant name
+            }).filter(p => p !== null); // Remove nulls (filtered out IDs)
+
+            console.log('Setting up edit members for participants:', participantNames);
+
+            if (participantNames.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem;">No participants yet. Add participants below.</p>';
+                return;
+            }
+
+            grid.innerHTML = participantNames.map(person => `
+                <div class="selectable-box selected" data-member="${person}">
+                    ${person}
                 </div>
             `).join('');
 
@@ -1419,21 +1482,29 @@
 
             const allMembers = [...selectedMembers, ...dynamicMembers];
 
-            console.log('Selected members:', selectedMembers);
-            console.log('Dynamic members:', dynamicMembers);
-            console.log('All members:', allMembers);
+            console.log('Selected participants:', selectedMembers);
+            console.log('Dynamic participants:', dynamicMembers);
+            console.log('All participants:', allMembers);
 
             // Validation
             if (allMembers.length < 2) {
-                showNotification('Group must have at least two members', 'error');
+                showNotification('Group must have at least two participants', 'error');
                 return;
             }
 
             try {
+                // Keep existing registered member IDs (users who joined via shared link)
+                // Since edit modal only shows participants, all entered names are participants
+                const existingMemberIds = Array.isArray(group.members) ? group.members : [];
+                
+                // All entered names are participants (remove duplicates)
+                const participantNames = [...new Set(allMembers)];
+
                 // Update group data
                 const oldName = group.name;
                 group.name = groupName;
-                group.members = allMembers;
+                group.members = existingMemberIds;  // Keep registered user IDs unchanged
+                group.participants = participantNames;  // Update participant names only
 
                 // REQUIRED: Update in Supabase first
                 if (!window.supabaseClient) {
