@@ -1411,14 +1411,14 @@ async function joinUserToGroup(groupId, userId) {
 
             if (updateError) {
                 console.error('Failed to update group members:', updateError);
-                return false;
+                return { joined: false, wasNewMember: false };
             }
 
             console.log('User joined group successfully');
-            return true;
+            return { joined: true, wasNewMember: true };
         } else {
             console.log('User is already a member of this group');
-            return true;
+            return { joined: true, wasNewMember: false };
         }
     } catch (error) {
         console.error('Failed to join group:', error);
