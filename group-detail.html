@@ -340,24 +340,40 @@
                 return;
             }
 
-            // Calculate balances
+            // Get only participants (names), not member IDs
+            const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+            
+            // Calculate balances using only participants
             const balances = {};
-            currentGroup.members.forEach(member => {
-                balances[member] = 0;
+            participants.forEach(participant => {
+                balances[participant] = 0;
             });
 
             currentGroup.expenses.forEach(expense => {
                 const amount = parseFloat(expense.amount);
-                const splitBetween = expense.splitBetween || currentGroup.members;
+                // Filter splitBetween to only include participants (names, not IDs)
+                const splitBetween = (expense.splitBetween || []).filter(name => 
+                    participants.includes(name) && 
+                    !name.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !name.match(/^user\d+$/i) &&
+                    !name.match(/^[a-zA-Z]+\d+$/)
+                );
+                if (splitBetween.length === 0) return; // Skip if no valid participants
                 const perPerson = amount / splitBetween.length;
 
-                if (balances[expense.paidBy] !== undefined) {
-                    balances[expense.paidBy] += amount;
+                // Only count if paidBy is a participant (name, not ID)
+                if (participants.includes(expense.paidBy) && 
+                    !expense.paidBy.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !expense.paidBy.match(/^user\d+$/i) &&
+                    !expense.paidBy.match(/^[a-zA-Z]+\d+$/)) {
+                    if (balances[expense.paidBy] !== undefined) {
+                        balances[expense.paidBy] += amount;
+                    }
                 }
 
-                splitBetween.forEach(member => {
-                    if (balances[member] !== undefined) {
-                        balances[member] -= perPerson;
+                splitBetween.forEach(participant => {
+                    if (balances[participant] !== undefined) {
+                        balances[participant] -= perPerson;
                     }
                 });
             });
@@ -404,22 +420,31 @@
                 return;
             }
 
-            // Calculate each person's share (split amount, not what they paid)
-            const allPeople = getAllGroupPeopleSync(currentGroup);
+            // Get only participants (names), not member IDs
+            const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+            
+            // Calculate each person's share (split amount, not what they paid) - only for participants
             const shareByPerson = {};
-            allPeople.forEach(person => {
-                shareByPerson[person] = 0;
+            participants.forEach(participant => {
+                shareByPerson[participant] = 0;
             });
 
             currentGroup.expenses.forEach(expense => {
                 const amount = parseFloat(expense.amount || 0);
-                const splitBetween = expense.splitBetween || currentGroup.members;
+                // Filter splitBetween to only include participants (names, not IDs)
+                const splitBetween = (expense.splitBetween || []).filter(name => 
+                    participants.includes(name) && 
+                    !name.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !name.match(/^user\d+$/i) &&
+                    !name.match(/^[a-zA-Z]+\d+$/)
+                );
+                if (splitBetween.length === 0) return; // Skip if no valid participants
                 const perPerson = amount / splitBetween.length;
 
-                // Each person who is part of the split gets their share
-                splitBetween.forEach(member => {
-                    if (shareByPerson[member] !== undefined) {
-                        shareByPerson[member] += perPerson;
+                // Each participant who is part of the split gets their share
+                splitBetween.forEach(participant => {
+                    if (shareByPerson[participant] !== undefined) {
+                        shareByPerson[participant] += perPerson;
                     }
                 });
             });
@@ -1282,9 +1307,34 @@
                 allExpenses = [...currentGroup.expenses];
             }
 
+            // Get only participants (names), not member IDs
+            const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+            
+            // Helper function to filter out IDs and keep only participant names
+            const filterToParticipants = (value) => {
+                if (Array.isArray(value)) {
+                    return value.filter(name => 
+                        participants.includes(name) && 
+                        !name.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                        !name.match(/^user\d+$/i) &&
+                        !name.match(/^[a-zA-Z]+\d+$/)
+                    );
+                }
+                if (typeof value === 'string') {
+                    return participants.includes(value) && 
+                           !value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                           !value.match(/^user\d+$/i) &&
+                           !value.match(/^[a-zA-Z]+\d+$/) ? value : null;
+                }
+                return null;
+            };
+
             if (expensesList) {
                 expensesList.innerHTML = currentGroup.expenses.map((expense, index) => {
                     console.log(`Expense ${index + 1}:`, expense.name, '-', formatCurrency(expense.amount));
+                    const paidBy = filterToParticipants(expense.paidBy) || 'Unknown';
+                    const splitBetween = filterToParticipants(expense.splitBetween || []);
+                    const splitBetweenText = splitBetween.length > 0 ? splitBetween.join(', ') : 'Unknown';
                     return `
                         <div class="expense-item">
                             <div class="expense-item-header">
@@ -1300,7 +1350,7 @@
                                         <div class="expense-amount">${formatCurrency(expense.amount)}</div>
                                 </div>
                                     <div class="expense-meta-row">
-                                        <span class="expense-meta">Paid by ${expense.paidBy} • Split between ${expense.splitBetween?.join(', ') || 'Unknown'}</span>
+                                        <span class="expense-meta">Paid by ${paidBy} • Split between ${splitBetweenText}</span>
                                         <span class="expense-date">${formatDate(expense.date)}</span>
                                     </div>
                                 </div>
@@ -1352,28 +1402,41 @@
                 return;
             }
 
-            // Calculate individual balances
-            // Combine registered members (IDs) and participants (names) for display
-            const allPeople = getAllGroupPeopleSync(currentGroup);
+            // Get only participants (names), not member IDs
+            const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+            
+            // Calculate individual balances using only participants
             const balances = {};
-            allPeople.forEach(person => {
-                balances[person] = 0;
+            participants.forEach(participant => {
+                balances[participant] = 0;
             });
 
             currentGroup.expenses.forEach(expense => {
                 const amount = parseFloat(expense.amount);
-                const splitBetween = expense.splitBetween || currentGroup.members;
+                // Filter splitBetween to only include participants (names, not IDs)
+                const splitBetween = (expense.splitBetween || []).filter(name => 
+                    participants.includes(name) && 
+                    !name.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !name.match(/^user\d+$/i) &&
+                    !name.match(/^[a-zA-Z]+\d+$/)
+                );
+                if (splitBetween.length === 0) return; // Skip if no valid participants
                 const perPerson = amount / splitBetween.length;
 
-                // Person who paid gets credited
-                if (balances[expense.paidBy] !== undefined) {
-                    balances[expense.paidBy] += amount;
+                // Person who paid gets credited (only if they're a participant)
+                if (participants.includes(expense.paidBy) && 
+                    !expense.paidBy.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !expense.paidBy.match(/^user\d+$/i) &&
+                    !expense.paidBy.match(/^[a-zA-Z]+\d+$/)) {
+                    if (balances[expense.paidBy] !== undefined) {
+                        balances[expense.paidBy] += amount;
+                    }
                 }
 
                 // Everyone who shared the expense gets debited
-                splitBetween.forEach(member => {
-                    if (balances[member] !== undefined) {
-                        balances[member] -= perPerson;
+                splitBetween.forEach(participant => {
+                    if (balances[participant] !== undefined) {
+                        balances[participant] -= perPerson;
                     }
                 });
             });
@@ -1456,21 +1519,21 @@
 
             if (modal) modal.style.display = 'block';
 
-            // Populate paid by dropdown - combine members and participants (use names)
+            // Populate paid by dropdown - only participants (names), not member IDs
             if (paidBySelect && currentGroup) {
-                const allPeople = getAllGroupPeopleSync(currentGroup);
+                const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
                 paidBySelect.innerHTML = '<option value="">Select who paid</option>' +
-                    allPeople.map(person => 
-                        `<option value="${person}">${person}</option>`
+                    participants.map(participant => 
+                        `<option value="${participant}">${participant}</option>`
                     ).join('');
             }
 
-            // Populate split between grid - combine members and participants (use names)
+            // Populate split between grid - only participants (names), not member IDs
             if (splitGrid && currentGroup) {
-                const allPeople = getAllGroupPeopleSync(currentGroup);
-                splitGrid.innerHTML = allPeople.map(person => 
-                    `<div class="selectable-box selected" data-member="${person}">
-                        ${person}
+                const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+                splitGrid.innerHTML = participants.map(participant => 
+                    `<div class="selectable-box selected" data-member="${participant}">
+                        ${participant}
                     </div>`
                 ).join('');
             }
@@ -1612,18 +1675,34 @@
             document.getElementById('editExpenseDescription').value = expense.name;
             document.getElementById('editExpenseAmount').value = expense.amount;
 
+            // Get only participants (names), not member IDs
+            const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+            
+            // Filter expense.paidBy and expense.splitBetween to only include participants (names, not IDs)
+            const expensePaidBy = participants.includes(expense.paidBy) && 
+                                 !expense.paidBy.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                                 !expense.paidBy.match(/^user\d+$/i) &&
+                                 !expense.paidBy.match(/^[a-zA-Z]+\d+$/) 
+                                 ? expense.paidBy : '';
+            
+            const expenseSplitBetween = (expense.splitBetween || []).filter(name => 
+                participants.includes(name) && 
+                !name.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                !name.match(/^user\d+$/i) &&
+                !name.match(/^[a-zA-Z]+\d+$/)
+            );
+
             const paidBySelect = document.getElementById('editExpensePaidBy');
-            const allPeople = getAllGroupPeopleSync(currentGroup);
             paidBySelect.innerHTML = '<option value="">Select who paid</option>' +
-                allPeople.map(person => 
-                    `<option value="${person}" ${person === expense.paidBy ? 'selected' : ''}>${person}</option>`
+                participants.map(participant => 
+                    `<option value="${participant}" ${participant === expensePaidBy ? 'selected' : ''}>${participant}</option>`
                 ).join('');
 
-            // Populate split between grid
+            // Populate split between grid - only participants
             const splitGrid = document.getElementById('editExpenseSplitGrid');
-            splitGrid.innerHTML = allPeople.map(person => 
-                `<div class="selectable-box ${expense.splitBetween?.includes(person) ? 'selected' : ''}" data-member="${person}">
-                    ${person}
+            splitGrid.innerHTML = participants.map(participant => 
+                `<div class="selectable-box ${expenseSplitBetween.includes(participant) ? 'selected' : ''}" data-member="${participant}">
+                    ${participant}
                 </div>`
             ).join('');
 

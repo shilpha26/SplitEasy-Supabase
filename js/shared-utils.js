@@ -182,7 +182,8 @@ function formatDate(dateString) {
 // Format currency for display
 function formatCurrency(amount) {
     const num = parseFloat(amount) || 0;
-    return currencyFormatter.format(num);
+    // Remove space between ₹ and amount (e.g., "₹ 70.00" -> "₹70.00")
+    return currencyFormatter.format(num).replace('₹ ', '₹');
 }
 
 // Format relative time (optimized)
