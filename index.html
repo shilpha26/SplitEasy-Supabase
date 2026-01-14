@@ -807,41 +807,41 @@
                                          dbGroupSupabaseIds.has(localGroupSupabaseId);
                         
                         if (!existsInDb) {
-                            // Check if user is a member of this local group
-                            const members = localGroup.members || [];
-                            const userId = window.currentUser.id;
-                            const userName = window.currentUser.name;
+                            // Check if this group was previously synced to database (has supabaseId or id is UUID)
+                            const hasSupabaseId = localGroup.supabaseId || 
+                                                 (localGroup.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(localGroup.id));
                             
-                            // Check membership - handle both IDs and names
-                            // Members array might contain IDs or names, so check both
-                            const isMemberById = members.includes(userId) || 
-                                               members.some(m => m && String(m).toLowerCase() === String(userId).toLowerCase());
-                            
-                            // Also check by name (in case members array stores names instead of IDs)
-                            const isMemberByName = members.includes(userName) ||
-                                                  members.some(m => m && String(m).toLowerCase() === String(userName).toLowerCase());
-                            
-                            const isMember = isMemberById || isMemberByName;
-                            
-                            // Also check if user is the creator
-                            const isCreator = localGroup.createdBy === userId || localGroup.created_by === userId;
-                            
-                            // IMPORTANT: If group doesn't exist in database, it was deleted
-                            // Even if user is creator, if group is not in DB, it means they deleted it
-                            // So we should remove it from localStorage
-                            if (isCreator) {
-                                // Creator deleted the group - remove from localStorage
-                                console.log('🗑️ Group deleted by creator, removing from localStorage:', localGroup.name);
+                            // If group has supabaseId but doesn't exist in DB, it was deleted - remove it
+                            if (hasSupabaseId) {
+                                console.log('🗑️ Group was synced to DB but no longer exists - removing from localStorage:', localGroup.name);
                                 groupsToRemove.push(localGroup);
-                            } else if (isMember) {
-                                // User is a member but group not in DB - might be newly joined, add it
-                                mergedGroups.push(localGroup);
-                                console.log('✅ Adding local group to list (not in DB but user is member):', localGroup.name, 'User:', userId, 'Members:', members);
                             } else {
-                                console.log('❌ Skipping local group (user not a member and not in DB):', localGroup.name, 'User:', userId, 'Name:', userName, 'Members:', members, 'CreatedBy:', localGroup.createdBy || localGroup.created_by);
+                                // Group was never synced to DB - might be newly created or joined
+                                // Check if user is a member of this local group
+                                const members = localGroup.members || [];
+                                const userId = window.currentUser.id;
+                                const userName = window.currentUser.name;
                                 
-                                // Mark for removal from localStorage
-                                groupsToRemove.push(localGroup);
+                                // Check membership - handle both IDs and names
+                                const isMemberById = members.includes(userId) || 
+                                                   members.some(m => m && String(m).toLowerCase() === String(userId).toLowerCase());
+                                
+                                const isMemberByName = members.includes(userName) ||
+                                                      members.some(m => m && String(m).toLowerCase() === String(userName).toLowerCase());
+                                
+                                const isMember = isMemberById || isMemberByName;
+                                
+                                // Also check if user is the creator
+                                const isCreator = localGroup.createdBy === userId || localGroup.created_by === userId;
+                                
+                                if (isMember || isCreator) {
+                                    // User is a member/creator and group was never synced - might be newly joined, add it
+                                    mergedGroups.push(localGroup);
+                                    console.log('✅ Adding local group to list (not in DB but user is member, never synced):', localGroup.name, 'User:', userId, 'Members:', members);
+                                } else {
+                                    console.log('❌ Skipping local group (user not a member and not in DB):', localGroup.name, 'User:', userId, 'Name:', userName, 'Members:', members, 'CreatedBy:', localGroup.createdBy || localGroup.created_by);
+                                    groupsToRemove.push(localGroup);
+                                }
                             }
                         } else {
                             console.log('ℹ️ Local group already in DB:', localGroup.name);
