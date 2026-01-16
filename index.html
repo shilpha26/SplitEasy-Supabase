@@ -1683,6 +1683,56 @@
                 return;
             }
 
+            // Check if current user is the creator
+            const creatorId = group.createdBy || group.created_by;
+            const isCreator = window.currentUser && window.currentUser.id === creatorId;
+
+            // If user is NOT the creator, allow them to leave the group
+            if (!isCreator) {
+                if (!confirm(`Are you sure you want to leave the group "${group.name}"? You will no longer see this group or its expenses.`)) {
+                    return;
+                }
+
+                try {
+                    // Remove user from group
+                    if (typeof window.removeUserFromGroup === 'function') {
+                        await window.removeUserFromGroup(editingGroupId, window.currentUser.id);
+                        console.log('User removed from group');
+                    } else {
+                        throw new Error('Remove user function not available');
+                    }
+
+                    // Remove from local array and cache
+                    window.groups = window.groups.filter(g => {
+                        const gId = g.id || g.supabaseId;
+                        const gSupabaseId = g.supabaseId || g.id;
+                        return gId !== editingGroupId && gSupabaseId !== editingGroupId;
+                    });
+                    saveToLocalStorage();
+                    displayGroups();
+                    closeEditGroupModal();
+                    showNotification('You have left the group', 'success');
+                    
+                    // Reload groups from Supabase to ensure sync
+                    await loadGroups();
+                } catch (error) {
+                    console.error('Failed to leave group:', error);
+                    
+                    // Still remove from local storage even if database update fails
+                    window.groups = window.groups.filter(g => {
+                        const gId = g.id || g.supabaseId;
+                        const gSupabaseId = g.supabaseId || g.id;
+                        return gId !== editingGroupId && gSupabaseId !== editingGroupId;
+                    });
+                    saveToLocalStorage();
+                    displayGroups();
+                    closeEditGroupModal();
+                    showNotification('Removed from your view. Group may still show if you refresh.', 'warning');
+                }
+                return;
+            }
+
+            // Creator deletion flow
             if (!confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`)) {
                 return;
             }
@@ -1749,6 +1799,54 @@
             const group = window.groups.find(g => g.id === groupId);
             if (!group) return;
 
+            // Check if current user is the creator
+            const creatorId = group.createdBy || group.created_by;
+            const isCreator = window.currentUser && window.currentUser.id === creatorId;
+
+            // If user is NOT the creator, allow them to leave the group
+            if (!isCreator) {
+                if (!confirm(`Are you sure you want to leave the group "${group.name}"? You will no longer see this group or its expenses.`)) {
+                    return;
+                }
+
+                try {
+                    // Remove user from group
+                    if (typeof window.removeUserFromGroup === 'function') {
+                        await window.removeUserFromGroup(groupId, window.currentUser.id);
+                        console.log('User removed from group');
+                    } else {
+                        throw new Error('Remove user function not available');
+                    }
+
+                    // Remove from local array and cache
+                    window.groups = window.groups.filter(g => {
+                        const gId = g.id || g.supabaseId;
+                        const gSupabaseId = g.supabaseId || g.id;
+                        return gId !== groupId && gSupabaseId !== groupId;
+                    });
+                    saveToLocalStorage();
+                    displayGroups();
+                    showNotification('You have left the group', 'success');
+                    
+                    // Reload groups from Supabase to ensure sync
+                    await loadGroups();
+                } catch (error) {
+                    console.error('Failed to leave group:', error);
+                    
+                    // Still remove from local storage even if database update fails
+                    window.groups = window.groups.filter(g => {
+                        const gId = g.id || g.supabaseId;
+                        const gSupabaseId = g.supabaseId || g.id;
+                        return gId !== groupId && gSupabaseId !== groupId;
+                    });
+                    saveToLocalStorage();
+                    displayGroups();
+                    showNotification('Removed from your view. Group may still show if you refresh.', 'warning');
+                }
+                return;
+            }
+
+            // Creator deletion flow
             if (!confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`)) return;
 
             try {

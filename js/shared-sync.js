@@ -1666,6 +1666,96 @@ async function handleExpenseChange(payload) {
     }
 }
 
+// Remove user from group (for members who want to leave)
+async function removeUserFromGroup(groupId, userId) {
+    if (!window.supabaseClient || !userId) {
+        throw new Error('Supabase client or user ID not available');
+    }
+
+    await detectDatabaseSchema();
+    const groupSchema = SCHEMA_MAPPING.groups;
+
+    // Fetch current group
+    const { data: group, error: fetchError } = await window.supabaseClient
+        .from('groups')
+        .select('*')
+        .eq(groupSchema.id, groupId)
+        .maybeSingle();
+
+    if (fetchError) {
+        throw fetchError;
+    }
+
+    if (!group) {
+        throw new Error('Group not found');
+    }
+
+    // Get creator ID - creator should never be removed
+    const creatorId = group[groupSchema.createdBy] || group.created_by;
+    if (userId === creatorId) {
+        throw new Error('Creator cannot leave their own group. Use delete instead.');
+    }
+
+    // Get members array
+    let members = group[groupSchema.members] || group.members || [];
+    if (typeof members === 'string') {
+        try {
+            members = JSON.parse(members);
+        } catch (e) {
+            members = [];
+        }
+    }
+    if (!Array.isArray(members)) {
+        members = [];
+    }
+
+    // Check if user is actually a member
+    const isMember = members.includes(userId) || 
+                     members.some(m => m && String(m).toLowerCase() === String(userId).toLowerCase());
+    
+    if (!isMember) {
+        console.log('User is not a member of this group');
+        // Still return success since the goal is achieved (user is not a member)
+        return { removed: true, wasMember: false };
+    }
+
+    // Remove user from members array
+    const updatedMembers = members.filter(m => 
+        m !== userId && 
+        String(m).toLowerCase() !== String(userId).toLowerCase()
+    );
+
+    // Update group in database
+    const { error: updateError } = await window.supabaseClient
+        .from('groups')
+        .update({
+            [groupSchema.members]: updatedMembers,
+            [groupSchema.updatedAt]: new Date().toISOString()
+        })
+        .eq(groupSchema.id, groupId);
+
+    if (updateError) {
+        throw updateError;
+    }
+
+    console.log('User removed from group members');
+
+    // Remove group from user's local storage
+    const localGroups = loadFromLocalStorageSafe();
+    const filteredGroups = localGroups.filter(g => {
+        const gId = g.id || g.supabaseId;
+        const gSupabaseId = g.supabaseId || g.id;
+        return gId !== groupId && gSupabaseId !== groupId;
+    });
+    
+    if (filteredGroups.length < localGroups.length) {
+        saveGroupsToLocalStorageSafe(filteredGroups);
+        console.log('Removed group from user\'s localStorage');
+    }
+
+    return { removed: true, wasMember: true };
+}
+
 // Stop real-time sync
 window.stopRealtimeSync = function() {
     if (window.splitEasySync.realtimeSubscription) {
@@ -1688,6 +1778,7 @@ window.syncUserToDatabase = syncUserToDatabase;
 window.syncAllDataToDatabase = syncAllDataToDatabase;
 window.detectDatabaseSchema = detectDatabaseSchema;
 window.joinUserToGroup = joinUserToGroup;
+window.removeUserFromGroup = removeUserFromGroup;
 
 // Enhanced sync management functions
 window.forceSyncToDatabase = async function() {

@@ -2314,9 +2314,48 @@
 
             // Check if current user is the creator (by ID)
             const creatorId = currentGroup.createdBy || currentGroup.created_by;
-            if (!window.currentUser || window.currentUser.id !== creatorId) {
-                const creatorName = await getUserNameFromId(creatorId);
-                showNotification(`Only ${creatorName} (the creator) can delete this group`, 'error');
+            const isCreator = window.currentUser && window.currentUser.id === creatorId;
+            
+            // If user is NOT the creator, allow them to leave the group
+            if (!isCreator) {
+                if (!confirm(`Are you sure you want to leave the group "${currentGroup.name}"? You will no longer see this group or its expenses.`)) {
+                    return;
+                }
+
+                try {
+                    // Remove user from group
+                    if (typeof window.removeUserFromGroup === 'function') {
+                        await window.removeUserFromGroup(currentGroupId, window.currentUser.id);
+                        console.log('User removed from group');
+                    } else {
+                        throw new Error('Remove user function not available');
+                    }
+
+                    // Remove from local storage
+                    const groups = loadFromLocalStorage().filter(g => {
+                        return (g.id !== currentGroupId) && (g.supabaseId !== currentGroupId);
+                    });
+                    saveGroupsToLocalStorage(groups);
+                    console.log('Group removed from localStorage. Remaining groups:', groups.length);
+
+                    showNotification('You have left the group', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                } catch (error) {
+                    console.error('Failed to leave group:', error);
+                    
+                    // Still remove from local storage even if database update fails
+                    const groups = loadFromLocalStorage().filter(g => {
+                        return (g.id !== currentGroupId) && (g.supabaseId !== currentGroupId);
+                    });
+                    saveGroupsToLocalStorage(groups);
+                    
+                    showNotification('Removed from your view. Group may still show if you refresh.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
                 return;
             }
 
