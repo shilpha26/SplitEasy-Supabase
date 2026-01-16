@@ -1486,11 +1486,25 @@ window.startRealtimeSync = function() {
             .subscribe((status) => {
                 console.log('📡 Real-time subscription status:', status);
                 if (status === 'SUBSCRIBED') {
-                    console.log('Real-time sync active');
-                    // Notification removed for cleaner UI
+                    console.log('✅ Real-time sync active - auto-refresh will be disabled');
+                    // Mark real-time as active
+                    window.splitEasySync.realtimeActive = true;
+                    // Notify that real-time is working (for auto-refresh to check)
+                    if (typeof window.onRealtimeStatusChange === 'function') {
+                        window.onRealtimeStatusChange(true);
+                    }
                 } else if (status === 'CHANNEL_ERROR') {
-                    console.error('Real-time sync error');
-                    // Notification removed for cleaner UI
+                    console.error('❌ Real-time sync error - auto-refresh will be used as fallback');
+                    window.splitEasySync.realtimeActive = false;
+                    if (typeof window.onRealtimeStatusChange === 'function') {
+                        window.onRealtimeStatusChange(false);
+                    }
+                } else {
+                    // Other statuses (SUBSCRIBING, TIMED_OUT, CLOSED)
+                    window.splitEasySync.realtimeActive = false;
+                    if (typeof window.onRealtimeStatusChange === 'function') {
+                        window.onRealtimeStatusChange(false);
+                    }
                 }
             });
 
@@ -1532,6 +1546,10 @@ async function handleGroupChange(payload) {
                         // Update current group if it's open
                         if (window.currentGroup && window.currentGroup.id === groupId) {
                             window.currentGroup = updatedGroup;
+                            // Also update local currentGroup variable in group-detail.html if it exists
+                            if (typeof window.setCurrentGroup === 'function') {
+                                window.setCurrentGroup(updatedGroup);
+                            }
                             if (typeof updateGroupDisplay === 'function') {
                                 await updateGroupDisplay();
                             }
@@ -1761,7 +1779,12 @@ window.stopRealtimeSync = function() {
     if (window.splitEasySync.realtimeSubscription) {
         window.supabaseClient.removeChannel(window.splitEasySync.realtimeSubscription);
         window.splitEasySync.realtimeSubscription = null;
+        window.splitEasySync.realtimeActive = false;
         console.log('🛑 Real-time sync stopped');
+        // Notify that real-time is no longer active
+        if (typeof window.onRealtimeStatusChange === 'function') {
+            window.onRealtimeStatusChange(false);
+        }
     }
 };
 

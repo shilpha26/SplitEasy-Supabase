@@ -284,6 +284,12 @@
 
         // Store group globally so it's accessible everywhere
         window.currentGroup = null;
+        
+        // Helper function to update currentGroup from real-time sync
+        window.setCurrentGroup = function(group) {
+            currentGroup = group;
+            window.currentGroup = group;
+        };
 
         // ========================================
         // DETAILS VIEW & TAB NAVIGATION
@@ -557,20 +563,45 @@
                 console.log('Scheduling real-time sync initialization...');
                 setTimeout(() => {
                     window.startRealtimeSync();
+                    // After starting real-time, wait a bit then check if it's working
+                    setTimeout(() => {
+                        if (!isRealtimeSyncActive()) {
+                            console.log('Real-time sync not active - starting auto-refresh fallback');
+                            startAutoRefresh();
+                        } else {
+                            console.log('Real-time sync is active - auto-refresh not needed');
+                        }
+                    }, 3000);
                 }, 2000); // Give time for group to load
             } else {
-                console.log('Real-time sync not initialized - missing user or function');
+                console.log('Real-time sync not initialized - starting auto-refresh fallback');
+                // Start auto-refresh as fallback if real-time sync is not available
+                startAutoRefresh();
             }
 
-            // Start automatic polling as fallback (every 5 seconds)
-            startAutoRefresh();
+            // Listen for real-time status changes
+            window.onRealtimeStatusChange = function(isActive) {
+                if (isActive) {
+                    console.log('✅ Real-time sync became active - stopping auto-refresh');
+                    stopAutoRefresh();
+                } else {
+                    console.log('❌ Real-time sync failed - starting auto-refresh fallback');
+                    startAutoRefresh();
+                }
+            };
         });
 
         // ========================================
         // AUTOMATIC REFRESH (POLLING) - FALLBACK FOR REAL-TIME SYNC
         // ========================================
         
-        // Start automatic refresh polling
+        // Check if real-time sync is active and working
+        function isRealtimeSyncActive() {
+            return window.splitEasySync?.realtimeSubscription && 
+                   window.splitEasySync?.realtimeActive === true;
+        }
+
+        // Start automatic refresh polling (only as fallback when real-time sync is not working)
         function startAutoRefresh() {
             // Stop any existing interval
             stopAutoRefresh();
@@ -581,10 +612,27 @@
                 return;
             }
 
-            console.log('🔄 Starting automatic refresh (every 5 seconds)');
+            // Check if real-time sync is active - if so, don't start auto-refresh
+            if (isRealtimeSyncActive()) {
+                console.log('✅ Real-time sync is active - skipping auto-refresh');
+                return;
+            }
+
+            console.log('🔄 Starting smart auto-refresh (fallback mode - real-time sync not available)');
             
-            // Poll every 5 seconds
+            // Store last known updated_at timestamp to detect changes
+            let lastKnownUpdatedAt = currentGroup?.updatedAt || currentGroup?.updated_at || null;
+            let lastKnownExpenseCount = currentGroup?.expenses?.length || 0;
+            
+            // Poll every 15 seconds (less frequent since this is just a fallback)
             autoRefreshInterval = setInterval(async () => {
+                // Check if real-time sync became active - if so, stop auto-refresh
+                if (isRealtimeSyncActive()) {
+                    console.log('✅ Real-time sync is now active - stopping auto-refresh');
+                    stopAutoRefresh();
+                    return;
+                }
+
                 // Skip if page is hidden (user switched tabs/apps)
                 if (document.hidden) {
                     return;
@@ -592,57 +640,82 @@
 
                 // Skip if we don't have a group ID
                 const groupIdToCheck = currentGroupId || (currentGroup && (currentGroup.id || currentGroup.supabaseId));
-                if (!groupIdToCheck) {
-                    console.log('No group ID for auto-refresh');
+                if (!groupIdToCheck || !window.supabaseClient) {
                     return;
                 }
 
                 try {
-                    // Fetch latest group data from database
+                    // STEP 1: Lightweight check - only fetch updated_at timestamp and expense count
+                    // This is much faster than fetching the entire group
+                    const { data: groupMeta, error: metaError } = await window.supabaseClient
+                        .from('groups')
+                        .select('updated_at, id')
+                        .eq('id', groupIdToCheck)
+                        .maybeSingle();
+
+                    if (metaError || !groupMeta) {
+                        console.warn('Auto-refresh: Could not check group metadata');
+                        return;
+                    }
+
+                    // Also check if expenses count changed (lightweight query)
+                    const { count: expenseCount, error: expenseError } = await window.supabaseClient
+                        .from('expenses')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('group_id', groupIdToCheck);
+
+                    const currentExpenseCount = expenseCount || 0;
+                    const currentUpdatedAt = groupMeta.updated_at;
+
+                    // STEP 2: Only proceed if there are actual changes
+                    const hasChanges = 
+                        currentUpdatedAt !== lastKnownUpdatedAt ||
+                        currentExpenseCount !== lastKnownExpenseCount;
+
+                    if (!hasChanges) {
+                        // No changes detected, skip full fetch
+                        return;
+                    }
+
+                    console.log('🔄 Auto-refresh (fallback): Changes detected, fetching full group data');
+
+                    // STEP 3: Only now fetch the full group data (expensive operation)
                     if (typeof window.fetchGroupFromDatabase === 'function') {
                         const updatedGroup = await window.fetchGroupFromDatabase(groupIdToCheck);
                         
                         if (updatedGroup && currentGroup) {
-                            // Compare expense count and last updated time to detect changes
-                            const currentExpenseCount = currentGroup.expenses?.length || 0;
-                            const updatedExpenseCount = updatedGroup.expenses?.length || 0;
-                            const currentUpdatedAt = currentGroup.updatedAt || currentGroup.updated_at;
-                            const updatedUpdatedAt = updatedGroup.updatedAt || updatedGroup.updated_at;
+                            // Update last known values
+                            lastKnownUpdatedAt = updatedGroup.updatedAt || updatedGroup.updated_at;
+                            lastKnownExpenseCount = updatedGroup.expenses?.length || 0;
                             
-                            // Only update if there are actual changes
-                            if (currentExpenseCount !== updatedExpenseCount || 
-                                currentUpdatedAt !== updatedUpdatedAt ||
-                                JSON.stringify(currentGroup.expenses) !== JSON.stringify(updatedGroup.expenses)) {
-                                
-                                console.log('🔄 Auto-refresh: Group updated, refreshing display');
-                                
-                                // Update current group
-                                currentGroup = updatedGroup;
-                                window.currentGroup = updatedGroup;
-                                
-                                // Update local storage
-                                const localGroups = loadFromLocalStorage();
-                                const groupIndex = localGroups.findIndex(g => 
-                                    g.id === groupIdToCheck || 
-                                    g.supabaseId === groupIdToCheck ||
-                                    (g.id === currentGroup.id) ||
-                                    (g.supabaseId === currentGroup.supabaseId)
-                                );
-                                if (groupIndex !== -1) {
-                                    localGroups[groupIndex] = updatedGroup;
-                                    saveGroupsToLocalStorage(localGroups);
-                                }
-                                
-                                // Update UI
-                                await updateGroupDisplay();
+                            console.log('🔄 Auto-refresh (fallback): Group updated, refreshing display');
+                            
+                            // Update current group
+                            currentGroup = updatedGroup;
+                            window.currentGroup = updatedGroup;
+                            
+                            // Update local storage
+                            const localGroups = loadFromLocalStorage();
+                            const groupIndex = localGroups.findIndex(g => 
+                                g.id === groupIdToCheck || 
+                                g.supabaseId === groupIdToCheck ||
+                                (g.id === currentGroup.id) ||
+                                (g.supabaseId === currentGroup.supabaseId)
+                            );
+                            if (groupIndex !== -1) {
+                                localGroups[groupIndex] = updatedGroup;
+                                saveGroupsToLocalStorage(localGroups);
                             }
+                            
+                            // Update UI
+                            await updateGroupDisplay();
                         }
                     }
                 } catch (error) {
                     console.warn('Auto-refresh error (will retry on next interval):', error);
                     // Don't show notification for polling errors to avoid spam
                 }
-            }, 5000); // 5 seconds
+            }, 15000); // 15 seconds (fallback mode - less frequent)
 
             // Stop polling when page becomes hidden
             document.addEventListener('visibilitychange', () => {
@@ -2322,6 +2395,9 @@
                     return;
                 }
 
+                // Stop auto-refresh during deletion
+                stopAutoRefresh();
+
                 try {
                     // Remove user from group
                     if (typeof window.removeUserFromGroup === 'function') {
@@ -2344,6 +2420,7 @@
                     }, 1500);
                 } catch (error) {
                     console.error('Failed to leave group:', error);
+                    console.error('Error details:', error.message, error.stack);
                     
                     // Still remove from local storage even if database update fails
                     const groups = loadFromLocalStorage().filter(g => {
@@ -2367,6 +2444,9 @@
             // If only creator is a member (no other members), delete immediately
             if (members.length === 1 && members[0] === window.currentUser.id && participants.length === 0) {
                 if (!confirm(`Are you sure you want to delete the group "${currentGroup.name}"? All expenses will be lost forever!`)) return;
+                
+                // Stop auto-refresh during deletion
+                stopAutoRefresh();
                 
                 try {
                     // Delete immediately (force delete)
@@ -2410,6 +2490,9 @@
             const memberCount = members.length;
             if (!confirm(`This group has ${memberCount} member(s). Other members will be notified and must confirm deletion.\n\nDo you want to initiate group deletion?`)) return;
 
+            // Stop auto-refresh during deletion
+            stopAutoRefresh();
+
             try {
                 // Mark group for collaborative deletion
                 if (typeof window.deleteGroupFromDatabase === 'function') {
@@ -2424,6 +2507,7 @@
                 }
             } catch (error) {
                 console.error('Failed to initiate group deletion:', error);
+                console.error('Error details:', error.message, error.stack);
                 showNotification('Failed to initiate group deletion. Please try again.', 'error');
             }
         }
