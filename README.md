@@ -1,97 +1,140 @@
 # SplitEasy - Expense Splitting App
 
-A modern, offline-first expense splitting application built with vanilla JavaScript and Supabase.
+A modern expense splitting application built with vanilla JavaScript and Supabase. Split expenses with friends, roommates, or travel buddies easily!
 
-## 🚀 Quick Start
+## 📋 What is SplitEasy?
 
-### Prerequisites
-- Node.js (optional, for environment variable support)
-- Python 3 (for local server)
+SplitEasy helps you:
+- ✅ Create groups and split expenses
+- ✅ Track who paid and who owes what
+- ✅ Calculate balances automatically
+- ✅ Sync data across devices with Supabase
+- ✅ Works offline (Progressive Web App)
 
-### Option 1: Using Environment Variables (Recommended)
+## 🚀 Quick Start Guide
 
-1. **Copy the example environment file:**
-   ```bash
-   cp .env.example .env
-   ```
+### Step 1: Get Supabase Credentials
 
-2. **Edit `.env` and add your Supabase credentials:**
+1. Go to [supabase.com](https://supabase.com) and create a free account
+2. Create a new project
+3. Go to **Settings** → **API**
+4. Copy your:
+   - **Project URL** (looks like: `https://xxxxx.supabase.co`)
+   - **anon/public key** (long JWT token)
+
+### Step 2: Configure the App
+
+**Option A: Using Environment Variables (Recommended)**
+
+1. Create a file named `.env` in the project root
+2. Add your Supabase credentials:
    ```env
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_ANON_KEY=your-anon-key-here
    ```
-
-3. **Generate config.js from environment variables:**
+3. Run this command to generate the config:
    ```bash
    npm run generate-config
-   # or
-   node scripts/generate-config.js
    ```
 
-4. **Start the local server:**
-   ```bash
-   python -m http.server 8000
-   ```
-   Or use the npm script:
-   ```bash
-   npm run dev
-   ```
+**Option B: Manual Configuration (Quick Start)**
 
-5. Open: http://localhost:8000
-
-### Option 2: Manual Config (Quick Start)
-
-1. Create `js/config.js` with your Supabase credentials:
+1. Create a file `js/config.js`
+2. Add this code with your credentials:
    ```javascript
    window.SUPABASECONFIG = {
        url: 'https://your-project.supabase.co',
        anonKey: 'your-anon-key-here'
    };
    ```
-3. Start a local server:
-   ```bash
-   python -m http.server 8000
-   ```
-4. Open: http://localhost:8000
 
-### Option 3: VS Code
+### Step 3: Start the App
+
+**Using Python (Easiest):**
+```bash
+python -m http.server 8000
+```
+
+**Using Node.js:**
+```bash
+npm run dev
+```
+
+**Using VS Code:**
 1. Install "Live Server" extension
 2. Right-click `index.html` → "Open with Live Server"
 
-## ⚠️ Important
+### Step 4: Open in Browser
 
-**Do NOT** just double-click `index.html` - you need a local web server because:
-- Service Workers require `localhost` (not `file://`)
-- CORS restrictions for Supabase
-- Better localStorage support
+Open: **http://localhost:8000**
 
-## 📋 Features
+> ⚠️ **Important:** Don't just double-click `index.html` - you need a local server because:
+> - Service Workers require `localhost` (not `file://`)
+> - CORS restrictions for Supabase
+> - Better localStorage support
 
-- ✅ Create groups and split expenses
-- ✅ Real-time balance calculations
-- ✅ Supabase cloud sync (required)
-- ✅ Progressive Web App (PWA)
-- ✅ Mobile-optimized UI
+## 📦 Setup Database
 
-## 🔧 Configuration
+The app needs database tables. Check `DATABASE_SETUP.md` for detailed instructions.
 
-### Local Development
+**Quick Setup:**
+1. Go to your Supabase project → **SQL Editor**
+2. Run the SQL from `supabase-migration.sql`
+3. Set up Row Level Security (RLS) policies from `supabase-rls-policies.sql`
 
-**Using Environment Variables (Recommended):**
-1. Create `.env` file from `.env.example`
-2. Add your Supabase credentials
-3. Run `npm run generate-config` to generate `js/config.js`
+## 🎯 How to Use
 
-**Manual Configuration:**
-1. Create `js/config.js` with your Supabase credentials (see Option 2 above)
+1. **Create an Account**
+   - Enter your name
+   - Choose a unique User ID (or generate one)
+   - Click "Continue"
 
-### GitHub Pages Deployment
+2. **Create a Group**
+   - Click "Create New Group"
+   - Enter group name (e.g., "Weekend Trip")
+   - Add members (friends, roommates, etc.)
+   - Click "Create Group"
 
-The app uses GitHub Actions to automatically inject environment variables during deployment.
+3. **Add Expenses**
+   - Open a group
+   - Click "Add Expense"
+   - Enter amount, who paid, and who should split
+   - Save the expense
+
+4. **View Balances**
+   - See who owes what automatically
+   - Track settlements
+   - View expense history
+
+## 📁 Project Structure
+
+```
+SplitEasy-Supabase/
+├── index.html              # Main app page
+├── group-detail.html       # Group details page
+├── css/
+│   └── style.css          # All styles
+├── js/
+│   ├── config.js          # Supabase config (create this)
+│   ├── logger.js          # Logging system
+│   ├── error-handler.js    # Error handling
+│   ├── dom-utils.js       # DOM utilities
+│   ├── app-state.js       # State management
+│   ├── modal-utils.js     # Modal dialogs
+│   ├── shared-utils.js    # Common utilities
+│   ├── shared-supabase.js  # Supabase client
+│   └── shared-sync.js     # Database sync
+├── sw.js                  # Service Worker (PWA)
+└── manifest.json          # PWA manifest
+```
+
+## 🔧 Deployment
+
+### Deploy to GitHub Pages
 
 1. **Set up GitHub Secrets:**
-   - Go to your repository → Settings → Secrets and variables → Actions
-   - Add these secrets:
+   - Go to your repo → **Settings** → **Secrets and variables** → **Actions**
+   - Add secrets:
      - `SUPABASE_URL`: Your Supabase project URL
      - `SUPABASE_ANON_KEY`: Your Supabase anon key
 
@@ -100,31 +143,60 @@ The app uses GitHub Actions to automatically inject environment variables during
      - Generate `js/config.js` from secrets
      - Deploy to GitHub Pages
 
-**Note:** `js/config.js` is gitignored and will be generated during deployment.
+> **Note:** `js/config.js` is gitignored and generated during deployment.
 
-## 📁 Project Structure
+## 🔐 Security Notes
 
-- `index.html` - Main page
-- `group-detail.html` - Group details
-- `js/shared-utils.js` - Optimized utilities
-- `js/shared-supabase.js` - Supabase config
-- `js/shared-sync.js` - Database sync
-- `css/style.css` - All styles
-- `sw.js` - Service Worker
-- `.env.example` - Environment variables template
-- `scripts/generate-config.js` - Config generator script
-- `.github/workflows/deploy.yml` - GitHub Actions deployment
+- ✅ `js/config.js` is gitignored (never commit it)
+- ✅ `.env` is gitignored (local development only)
+- ✅ GitHub Secrets used for production
+- ⚠️ Never commit sensitive credentials
 
-## 🔐 Security
+## 🛠️ Development
 
-- `js/config.js` is gitignored (generated from environment variables)
-- `.env` is gitignored (local development only)
-- GitHub Secrets are used for production deployment
-- Never commit sensitive credentials to the repository
+### Code Quality Features
 
-## 🎯 Recent Updates
+- ✅ **Security**: XSS prevention, safe DOM manipulation
+- ✅ **Accessibility**: ARIA labels, keyboard navigation
+- ✅ **Performance**: DOM caching, optimized queries
+- ✅ **Error Handling**: Centralized error management
+- ✅ **Logging**: Environment-aware logging system
 
-- ✅ Supabase-based architecture (no offline mode)
-- ✅ Environment variable support
-- ✅ GitHub Actions deployment
-- ✅ Improved error handling and logging
+### Key Utilities
+
+- `Logger` - Logging system (only logs in development)
+- `DOMUtils` - Safe DOM manipulation with caching
+- `AppState` - Centralized state management
+- `ModalUtils` - Accessible modal dialogs
+- `ErrorHandler` - Consistent error handling
+
+## 📚 Documentation
+
+- `DATABASE_SETUP.md` - Database setup instructions
+- `OPTIMIZATION_SUMMARY.md` - Code optimization details
+- `OPTIMIZATION_GUIDE.md` - How to use new utilities
+
+## 🐛 Troubleshooting
+
+**App won't load?**
+- Make sure you're using a local server (not `file://`)
+- Check browser console for errors
+- Verify Supabase credentials in `js/config.js`
+
+**Database errors?**
+- Check if tables exist in Supabase
+- Verify RLS policies are set up
+- Check browser console for specific errors
+
+**Service Worker issues?**
+- Clear browser cache
+- Use `window.clearAppCache()` in console
+- Check if service worker is registered in DevTools
+
+## 📝 License
+
+This project is open source and available for personal and commercial use.
+
+## 🙏 Support
+
+For issues or questions, check the documentation files or open an issue in the repository.

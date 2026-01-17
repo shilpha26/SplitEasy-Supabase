@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
@@ -38,8 +39,8 @@
                 </div>
                 <div class="user-info">
                     <span id="currentUserName">Loading...</span>
-                    <button class="btn-link" onclick="showEditUserNameModal()" title="Edit Name">✎</button>
-                    <button class="btn-link" onclick="showChangeUserModal()">Change User</button>
+                    <button class="btn-link" data-action="showEditUserNameModal" title="Edit Name" type="button" aria-label="Edit user name">✎</button>
+                    <button class="btn-link" data-action="showChangeUserModal" type="button" aria-label="Change user">Change User</button>
                 </div>
             </div>
         </header>
@@ -52,7 +53,7 @@
                     <h2>Your Groups</h2>
                     <p class="group-count" id="groupCount">0 groups</p>
                 </div>
-                <button class="btn-success" onclick="showCreateGroupModal()">Create New Group</button>
+                <button class="btn-success" data-action="showCreateGroupModal" type="button" aria-label="Create new group">Create New Group</button>
             </div>
 
             <!-- Groups List -->
@@ -63,7 +64,7 @@
             <!-- Empty State -->
             <div id="emptyState" class="empty-state">
                 <p>You don't have any groups yet!</p>
-                <button class="btn-success" onclick="showCreateGroupModal()">Create Your First Group</button>
+                <button class="btn-success" data-action="showCreateGroupModal" type="button" aria-label="Create your first group">Create Your First Group</button>
             </div>
         </main>
     </div>
@@ -79,7 +80,7 @@
                 <div id="previousUsersSection" class="previous-users-section" style="display: none;">
                     <div class="section-header">
                         <h4>Previous Users</h4>
-                        <button type="button" class="btn-link" onclick="showNewUserForm()">Add New User</button>
+                        <button type="button" class="btn-link" data-action="showNewUserForm" aria-label="Add new user">Add New User</button>
                     </div>
                     <div id="previousUsersList" class="previous-users-list">
                         <!-- Previous users will be loaded here -->
@@ -96,14 +97,14 @@
                         <label for="userIdInput">User ID</label>
                         <div class="input-with-status">
                             <input type="text" id="userIdInput" placeholder="Enter desired User ID" required>
-                            <button type="button" class="btn-check" onclick="checkUserIdAvailability()" disabled>Check</button>
+                            <button type="button" class="btn-check" data-action="checkUserIdAvailability" disabled aria-label="Check user ID availability">Check</button>
                         </div>
                         <div class="form-help" id="userIdStatus">Enter a unique User ID</div>
                         <div class="form-help-text">User ID must be 3-20 characters, letters and numbers only</div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn-link" onclick="handleGenerateUserId()">Generate User ID</button>
-                        <button type="button" class="btn-success" onclick="createUser()" id="continueBtn" disabled>Continue</button>
+                        <button type="button" class="btn-link" data-action="handleGenerateUserId" aria-label="Generate user ID">Generate User ID</button>
+                        <button type="button" class="btn-success" data-action="createUser" id="continueBtn" disabled aria-label="Continue to app">Continue</button>
                     </div>
                 </div>
             </div>
@@ -115,7 +116,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Edit Your Name</h3>
-                <span class="close" onclick="closeEditUserNameModal()">&times;</span>
+                <span class="close" data-action="closeEditUserNameModal" role="button" tabindex="0" aria-label="Close edit name modal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -124,8 +125,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeEditUserNameModal()">Cancel</button>
-                <button type="button" class="btn-success" onclick="saveUserName()">Save</button>
+                <button type="button" class="btn-secondary" data-action="closeEditUserNameModal" aria-label="Cancel editing name">Cancel</button>
+                <button type="button" class="btn-success" data-action="saveUserName" aria-label="Save name changes">Save</button>
             </div>
         </div>
     </div>
@@ -135,7 +136,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Create New Group</h3>
-                <span class="close" onclick="closeCreateGroupModal()">&times;</span>
+                <span class="close" data-action="closeCreateGroupModal" role="button" tabindex="0" aria-label="Close create group modal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -148,8 +149,8 @@
                         <div class="selection-header">
                             <span>Select Members</span>
                             <div class="selection-actions">
-                                <button class="selection-action" onclick="selectAllMembers()">Select All</button>
-                                <button class="selection-action" onclick="clearAllMembers()">Clear All</button>
+                                <button class="selection-action" data-action="selectAllMembers" type="button" aria-label="Select all members">Select All</button>
+                                <button class="selection-action" data-action="clearAllMembers" type="button" aria-label="Clear all member selections">Clear All</button>
                             </div>
                         </div>
                         <div class="selectable-grid" id="memberSelectionGrid">
@@ -157,7 +158,7 @@
                         </div>
                         <div class="add-item-section">
                             <input type="text" class="add-item-input" id="newMemberInput" placeholder="Add new member">
-                            <button class="btn-add" onclick="addNewMember()" title="Add member">+</button>
+                            <button class="btn-add" data-action="addNewMember" type="button" title="Add member" aria-label="Add new member">+</button>
                         </div>
                         <div class="dynamic-items" id="dynamicMembers">
                             <!-- Dynamically added members will appear here -->
@@ -166,8 +167,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeCreateGroupModal()">Cancel</button>
-                <button type="button" class="btn-success" onclick="createGroup()">Create Group</button>
+                <button type="button" class="btn-secondary" data-action="closeCreateGroupModal" aria-label="Cancel creating group">Cancel</button>
+                <button type="button" class="btn-success" data-action="createGroup" aria-label="Create group">Create Group</button>
             </div>
         </div>
     </div>
@@ -177,7 +178,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Edit Group</h3>
-                <span class="close" onclick="closeEditGroupModal()">&times;</span>
+                <span class="close" data-action="closeEditGroupModal" role="button" tabindex="0" aria-label="Close edit group modal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -190,8 +191,8 @@
                         <div class="selection-header">
                             <span>Edit Members</span>
                             <div class="selection-actions">
-                                <button class="selection-action" onclick="selectAllEditMembers()">Select All</button>
-                                <button class="selection-action" onclick="clearAllEditMembers()">Clear All</button>
+                                <button class="selection-action" data-action="selectAllEditMembers" type="button" aria-label="Select all members">Select All</button>
+                                <button class="selection-action" data-action="clearAllEditMembers" type="button" aria-label="Clear all member selections">Clear All</button>
                             </div>
                         </div>
                         <div class="selectable-grid" id="editMemberSelectionGrid">
@@ -199,7 +200,7 @@
                         </div>
                         <div class="add-item-section">
                             <input type="text" class="add-item-input" id="editNewMemberInput" placeholder="Add new member">
-                            <button class="btn-add" onclick="addNewEditMember()" title="Add member">+</button>
+                            <button class="btn-add" data-action="addNewEditMember" type="button" title="Add member" aria-label="Add new member">+</button>
                         </div>
                         <div class="dynamic-items" id="editDynamicMembers">
                             <!-- Dynamically added members will appear here -->
@@ -209,11 +210,11 @@
             </div>
             <div class="modal-footer-with-delete">
                 <div class="modal-footer-left">
-                    <button type="button" class="btn-danger" onclick="deleteGroupConfirm()">Delete Group</button>
+                    <button type="button" class="btn-danger" data-action="deleteGroupConfirm" aria-label="Delete group">Delete Group</button>
                 </div>
                 <div class="modal-footer-right">
-                    <button type="button" class="btn-secondary" onclick="closeEditGroupModal()">Cancel</button>
-                    <button type="button" class="btn-success" onclick="saveEditGroupChanges()">Save Changes</button>
+                    <button type="button" class="btn-secondary" data-action="closeEditGroupModal" aria-label="Cancel editing group">Cancel</button>
+                    <button type="button" class="btn-success" data-action="saveEditGroupChanges" aria-label="Save group changes">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -227,13 +228,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- 2. Configuration (must load before Supabase initialization) -->
     <script src="js/config.js"></script>
-    <!-- 3. Utilities -->
+    <!-- 3. Core Utilities (Logger, Error Handler, DOM Utils, App State) -->
+    <script src="js/logger.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/dom-utils.js"></script>
+    <script src="js/app-state.js"></script>
+    <!-- 4. Shared Utilities -->
     <script src="js/shared-utils.js"></script>
-    <!-- 4. Supabase client initialization -->
+    <!-- 5. Modal Utilities (replaces prompt/confirm) -->
+    <script src="js/modal-utils.js"></script>
+    <!-- 6. Supabase client initialization -->
     <script src="js/shared-supabase.js"></script>
-    <!-- 5. Sync functionality -->
+    <!-- 7. Sync functionality -->
     <script src="js/shared-sync.js"></script>
-    <!-- 6. Main application script (runs after all dependencies are loaded) -->
+    <!-- 8. Main application script (runs after all dependencies are loaded) -->
     <script>
         // ========================================
         // GLOBAL VARIABLES
@@ -255,22 +263,19 @@
 
         // Update loading message
         function updateLoadingMessage(message) {
-            const loadingMsg = document.getElementById('loadingMessage');
-            if (loadingMsg) {
-                loadingMsg.textContent = message;
-            }
+            DOMUtils.setText('loadingMessage', message);
         }
 
         // Hide loading screen and show main content
         function showMainApp() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            const mainApp = document.getElementById('mainAppContent');
+            const loadingScreen = DOMUtils.get('loadingScreen');
+            const mainApp = DOMUtils.get('mainAppContent');
             if (loadingScreen) loadingScreen.style.display = 'none';
             if (mainApp) mainApp.style.display = 'block';
         }
 
         async function initializeApp() {
-            console.log('Initializing SplitEasy...');
+            Logger?.info('Initializing SplitEasy...');
             updateLoadingMessage('Loading application...');
 
             // REQUIRED: Initialize Supabase - app won't work without it
@@ -284,19 +289,40 @@
                     break;
                 }
                 updateLoadingMessage(`Loading Supabase... (${retries + 1}/${maxRetries})`);
-                console.log(`Waiting for Supabase to load... (${retries + 1}/${maxRetries})`);
+                Logger?.debug(`Waiting for Supabase to load... (${retries + 1}/${maxRetries})`);
                 await new Promise(resolve => setTimeout(resolve, 200));
                 retries++;
             }
 
             if (typeof window.initializeSupabase !== 'function') {
                 const errorMsg = 'Supabase initialization failed. Please check your configuration.';
-                console.error(errorMsg);
+                Logger?.error(errorMsg);
                 updateLoadingMessage('Configuration error');
                 if (typeof showNotification === 'function') {
                     showNotification(errorMsg, 'error');
                 }
-                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Configuration Error</h1><p>Supabase is required but not configured. Please check js/config.js</p><p style="margin-top: 1rem;"><button onclick="window.location.reload()" style="padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button></p></div>';
+                // Create error screen safely
+                const errorDiv = DOMUtils.create('div', {
+                    style: 'padding: 2rem; text-align: center;'
+                });
+                const h1 = DOMUtils.create('h1', {}, 'Configuration Error');
+                const p1 = DOMUtils.create('p', {}, 'Supabase is required but not configured. Please check js/config.js');
+                const buttonContainer = DOMUtils.create('p', {
+                    style: 'margin-top: 1rem;'
+                });
+                const retryBtn = DOMUtils.create('button', {
+                    'data-action': 'reloadPage',
+                    style: 'padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;',
+                    type: 'button'
+                }, 'Retry');
+                buttonContainer.appendChild(retryBtn);
+                errorDiv.appendChild(h1);
+                errorDiv.appendChild(p1);
+                errorDiv.appendChild(buttonContainer);
+                document.body.textContent = '';
+                document.body.appendChild(errorDiv);
+                // Make reload function available
+                window.reloadPage = () => window.location.reload();
                 return;
             }
 
@@ -309,7 +335,7 @@
                 supabaseInitialized = window.initializeSupabase();
                 if (!supabaseInitialized) {
                     updateLoadingMessage(`Connecting to database... (${retries + 1}/5)`);
-                    console.log(`Supabase initialization attempt ${retries + 1}/5...`);
+                    Logger?.debug(`Supabase initialization attempt ${retries + 1}/5...`);
                     await new Promise(resolve => setTimeout(resolve, 500));
                     retries++;
                 }
@@ -317,12 +343,33 @@
 
             if (!supabaseInitialized) {
                 const errorMsg = 'Supabase initialization failed. Please check your connection and configuration.';
-                console.error(errorMsg);
+                Logger?.error(errorMsg);
                 updateLoadingMessage('Connection failed');
                 if (typeof showNotification === 'function') {
                     showNotification(errorMsg, 'error');
                 }
-                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Connection Error</h1><p>Cannot connect to Supabase. Please check your internet connection and js/config.js configuration.</p><p style="margin-top: 1rem;"><button onclick="window.location.reload()" style="padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button></p></div>';
+                // Create error screen safely
+                const errorDiv = DOMUtils.create('div', {
+                    style: 'padding: 2rem; text-align: center;'
+                });
+                const h1 = DOMUtils.create('h1', {}, 'Connection Error');
+                const p1 = DOMUtils.create('p', {}, 'Cannot connect to Supabase. Please check your internet connection and js/config.js configuration.');
+                const buttonContainer = DOMUtils.create('p', {
+                    style: 'margin-top: 1rem;'
+                });
+                const retryBtn = DOMUtils.create('button', {
+                    'data-action': 'reloadPage',
+                    style: 'padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;',
+                    type: 'button'
+                }, 'Retry');
+                buttonContainer.appendChild(retryBtn);
+                errorDiv.appendChild(h1);
+                errorDiv.appendChild(p1);
+                errorDiv.appendChild(buttonContainer);
+                document.body.textContent = '';
+                document.body.appendChild(errorDiv);
+                // Make reload function available
+                window.reloadPage = () => window.location.reload();
                 return;
             }
 
@@ -331,23 +378,44 @@
             retries = 0;
             while (retries < 10 && !window.supabaseClient) {
                 updateLoadingMessage(`Initializing... (${retries + 1}/10)`);
-                console.log(`Waiting for Supabase client... (${retries + 1}/10)`);
+                Logger?.debug(`Waiting for Supabase client... (${retries + 1}/10)`);
                 await new Promise(resolve => setTimeout(resolve, 300));
                 retries++;
             }
 
             if (!window.supabaseClient) {
                 const errorMsg = 'Supabase client not available. Please refresh the page.';
-                console.error(errorMsg);
+                Logger?.error(errorMsg);
                 updateLoadingMessage('Initialization failed');
                 if (typeof showNotification === 'function') {
                     showNotification(errorMsg, 'error');
                 }
-                document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>Connection Error</h1><p>Supabase client failed to initialize. Please refresh the page.</p><p style="margin-top: 1rem;"><button onclick="window.location.reload()" style="padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Page</button></p></div>';
+                // Create error screen safely
+                const errorDiv = DOMUtils.create('div', {
+                    style: 'padding: 2rem; text-align: center;'
+                });
+                const h1 = DOMUtils.create('h1', {}, 'Connection Error');
+                const p1 = DOMUtils.create('p', {}, 'Supabase client failed to initialize. Please refresh the page.');
+                const buttonContainer = DOMUtils.create('p', {
+                    style: 'margin-top: 1rem;'
+                });
+                const refreshBtn = DOMUtils.create('button', {
+                    'data-action': 'reloadPage',
+                    style: 'padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;',
+                    type: 'button'
+                }, 'Refresh Page');
+                buttonContainer.appendChild(refreshBtn);
+                errorDiv.appendChild(h1);
+                errorDiv.appendChild(p1);
+                errorDiv.appendChild(buttonContainer);
+                document.body.textContent = '';
+                document.body.appendChild(errorDiv);
+                // Make reload function available
+                window.reloadPage = () => window.location.reload();
                 return;
             }
 
-            console.log('✅ Supabase initialized successfully');
+            Logger?.info('Supabase initialized successfully');
             updateLoadingMessage('Loading your data...');
 
             // Check for return URL (from shared link)
@@ -365,7 +433,7 @@
 
             if (userData) {
                 window.currentUser = JSON.parse(userData);
-                document.getElementById('currentUserName').textContent = window.currentUser.name;
+                DOMUtils.setText('currentUserName', window.currentUser.name);
                 await loadGroups();
                 showMainContent();
                 showMainApp(); // Hide loading screen
@@ -391,9 +459,9 @@
 
         // FIXED: Enhanced User Login Modal - cleaner previous users view
         function showUserLoginModal(hasPreviousUsers = false) {
-            const modal = document.getElementById('userLoginModal');
-            const previousSection = document.getElementById('previousUsersSection');
-            const newUserForm = document.getElementById('newUserForm');
+            const modal = DOMUtils.get('userLoginModal');
+            const previousSection = DOMUtils.get('previousUsersSection');
+            const newUserForm = DOMUtils.get('newUserForm');
 
             if (hasPreviousUsers) {
                 loadPreviousUsers();
@@ -422,20 +490,23 @@
                 return;
             }
 
-            const modal = document.getElementById('editUserNameModal');
-            const nameInput = document.getElementById('editUserNameInput');
+            const modal = DOMUtils.get('editUserNameModal');
+            const nameInput = DOMUtils.get('editUserNameInput');
             
             if (modal && nameInput) {
                 nameInput.value = window.currentUser.name || '';
                 modal.style.display = 'block';
-                // Focus on input after modal is shown
-                setTimeout(() => nameInput.focus(), 100);
+                // Focus on input after modal is shown for accessibility
+                setTimeout(() => {
+                    nameInput.focus();
+                    DOMUtils.focus('editUserNameInput');
+                }, 100);
             }
         }
 
         // Close edit user name modal
         function closeEditUserNameModal() {
-            const modal = document.getElementById('editUserNameModal');
+            const modal = DOMUtils.get('editUserNameModal');
             if (modal) {
                 modal.style.display = 'none';
             }
@@ -448,7 +519,7 @@
                 return;
             }
 
-            const nameInput = document.getElementById('editUserNameInput');
+            const nameInput = DOMUtils.get('editUserNameInput');
             const newName = nameInput?.value.trim();
 
             if (!newName) {
@@ -482,15 +553,15 @@
                 if (window.supabaseClient && typeof window.syncUserToDatabase === 'function') {
                     try {
                         await window.syncUserToDatabase(window.currentUser);
-                        console.log('User name updated in database');
+                        Logger?.info('User name updated in database');
                     } catch (dbError) {
-                        console.warn('Failed to update user name in database:', dbError);
+                        Logger?.warn('Failed to update user name in database:', dbError);
                         // Continue anyway - local update succeeded
                     }
                 }
 
                 // Update UI
-                document.getElementById('currentUserName').textContent = newName;
+                DOMUtils.setText('currentUserName', newName);
                 closeEditUserNameModal();
                 showNotification('Name updated successfully!', 'success');
 
@@ -500,17 +571,17 @@
                 }
 
             } catch (error) {
-                console.error('Failed to update user name:', error);
-                showNotification('Failed to update name. Please try again.', 'error');
+                Logger?.error('Failed to update user name:', error);
+                ErrorHandler?.handle(error, 'saveUserName', true);
             }
         }
 
         // Setup User ID input validation
         function setupUserIdInput() {
-            const userIdInput = document.getElementById('userIdInput');
+            const userIdInput = DOMUtils.get('userIdInput');
             const checkBtn = document.querySelector('.btn-check');
-            const continueBtn = document.getElementById('continueBtn');
-            const userNameInput = document.getElementById('userName');
+            const continueBtn = DOMUtils.get('continueBtn');
+            const userNameInput = DOMUtils.get('userName');
 
             // User ID input validation
             userIdInput.addEventListener('input', function() {
@@ -545,9 +616,11 @@
 
         // Update continue button state
         function updateContinueButton() {
-            const continueBtn = document.getElementById('continueBtn');
-            const userName = document.getElementById('userName').value.trim();
-            const userId = document.getElementById('userIdInput').value.trim();
+            const continueBtn = DOMUtils.get('continueBtn');
+            const userNameInput = DOMUtils.get('userName');
+            const userIdInput = DOMUtils.get('userIdInput');
+            const userName = userNameInput?.value.trim() || '';
+            const userId = userIdInput?.value.trim() || '';
 
             if (userName && userId && isUserIdAvailable) {
                 continueBtn.disabled = false;
@@ -564,7 +637,8 @@
 
         // Check User ID availability
         async function checkUserIdAvailability() {
-            const userIdInput = document.getElementById('userIdInput');
+            const userIdInput = DOMUtils.get('userIdInput');
+            if (!userIdInput) return;
             const userId = userIdInput.value.trim();
             const checkBtn = document.querySelector('.btn-check');
 
@@ -610,7 +684,7 @@
                 updateContinueButton();
 
             } catch (error) {
-                console.error('User ID check failed:', error);
+                Logger?.error('User ID check failed:', error);
                 setUserIdStatus('Unable to verify availability (offline mode)', 'warning');
                 isUserIdAvailable = true; // Allow in offline mode
                 updateContinueButton();
@@ -622,9 +696,14 @@
 
         // Set User ID status
         function setUserIdStatus(message, type) {
-            const statusEl = document.getElementById('userIdStatus');
-            statusEl.textContent = message;
-            statusEl.className = `form-help ${type}`;
+            const statusEl = DOMUtils.get('userIdStatus');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = `form-help ${type}`;
+                // Add ARIA live region for screen readers
+                statusEl.setAttribute('role', 'status');
+                statusEl.setAttribute('aria-live', 'polite');
+            }
         }
 
         // Reset User ID status
@@ -634,14 +713,19 @@
 
         // Enhanced Generate User ID
         function handleGenerateUserId() {
-            const userName = document.getElementById('userName').value.trim();
+            const userNameInput = DOMUtils.get('userName');
+            if (!userNameInput) return;
+            const userName = userNameInput.value.trim();
             if (!userName) {
                 showNotification('Please enter your name first', 'error');
                 return;
             }
 
             let userId = generateUniqueUserId(userName);
-            document.getElementById('userIdInput').value = userId;
+            const userIdInput = DOMUtils.get('userIdInput');
+            if (userIdInput) {
+                userIdInput.value = userId;
+            }
 
             // Trigger availability check
             checkUserIdAvailability();
@@ -673,8 +757,12 @@
 
         // Enhanced Create User
         async function createUser() {
-            const userName = document.getElementById('userName').value.trim();
-            const userId = document.getElementById('userIdInput').value.trim();
+            const userNameInput = DOMUtils.get('userName');
+            const userIdInput = DOMUtils.get('userIdInput');
+            if (!userNameInput || !userIdInput) return;
+            
+            const userName = userNameInput.value.trim();
+            const userId = userIdInput.value.trim();
 
             if (!userName) {
                 showNotification('Please enter your name', 'error');
@@ -709,7 +797,7 @@
                         await window.createUserInDatabase(userId, userName);
                     } catch (dbError) {
                         // If users table doesn't exist, that's okay - continue with local storage
-                        console.log('User creation in database skipped (table may not exist)');
+                        Logger?.debug('User creation in database skipped (table may not exist)');
                     }
                 }
 
@@ -718,7 +806,7 @@
                 storePreviousUser(userData);
 
                 window.currentUser = userData;
-                document.getElementById('currentUserName').textContent = userName;
+                DOMUtils.setText('currentUserName', userName);
                 showMainContent();
                 await loadGroups();
 
@@ -740,12 +828,13 @@
                 }
 
             } catch (error) {
-                console.error('User creation failed:', error);
+                Logger?.error('User creation failed:', error);
+                ErrorHandler?.handle(error, 'createUser', false);
                 // Even if database creation fails, continue with local storage
                 localStorage.setItem('spliteasy_current_user', JSON.stringify(userData));
                 storePreviousUser(userData);
                 window.currentUser = userData;
-                document.getElementById('currentUserName').textContent = userName;
+                DOMUtils.setText('currentUserName', userName);
                 showMainContent();
                 await loadGroups();
                 showNotification(`Welcome, ${userName}! (offline mode)`);
@@ -768,7 +857,7 @@
                 const data = localStorage.getItem('spliteasy_previous_users');
                 return data ? JSON.parse(data) : [];
             } catch (error) {
-                console.error('Error loading previous users:', error);
+                Logger?.error('Error loading previous users:', error);
                 return [];
             }
         }
@@ -792,35 +881,78 @@
 
                 localStorage.setItem('spliteasy_previous_users', JSON.stringify(previousUsers));
             } catch (error) {
-                console.error('Error storing previous user:', error);
+                Logger?.error('Error storing previous user:', error);
             }
         }
 
         // FIXED: Clean previous users display - no extra buttons shown
         function loadPreviousUsers() {
             const previousUsers = getPreviousUsers();
-            const container = document.getElementById('previousUsersList');
+            const container = DOMUtils.get('previousUsersList');
+            if (!container) return;
+
+            // Clear container
+            container.textContent = '';
 
             if (previousUsers.length === 0) {
-                container.innerHTML = '<p class="no-users">No previous users found</p>';
+                const noUsersMsg = DOMUtils.create('p', { className: 'no-users' }, 'No previous users found');
+                container.appendChild(noUsersMsg);
                 return;
             }
 
-            // Clean display - just the users, no extra buttons at bottom
-            container.innerHTML = previousUsers.map(user => `
-                <div class="previous-user-item" onclick="switchToUser('${user.id}')">
-                    <div class="user-info">
-                        <div class="user-name">${escapeHtml(user.name)}</div>
-                        <div class="user-id">ID: ${escapeHtml(user.id)}</div>
-                        <div class="last-used">Last used: ${formatRelativeTime(user.lastUsed)}</div>
-                    </div>
-                    <button class="btn-remove" onclick="handleDeleteAccount('${user.id}', event)" title="Delete Account">×</button>
-                </div>
-            `).join('');
+            // Create user items safely
+            previousUsers.forEach(user => {
+                const userItem = DOMUtils.create('div', {
+                    className: 'previous-user-item',
+                    'data-action': 'switchToUser',
+                    'data-user-id': user.id
+                });
+                
+                const userInfo = DOMUtils.create('div', { className: 'user-info' });
+                const userName = DOMUtils.create('div', { className: 'user-name' }, escapeHtml(user.name));
+                const userId = DOMUtils.create('div', { className: 'user-id' }, `ID: ${escapeHtml(user.id)}`);
+                const lastUsed = DOMUtils.create('div', { className: 'last-used' }, `Last used: ${formatRelativeTime(user.lastUsed)}`);
+                
+                userInfo.appendChild(userName);
+                userInfo.appendChild(userId);
+                userInfo.appendChild(lastUsed);
+                
+                const deleteBtn = DOMUtils.create('button', {
+                    className: 'btn-remove',
+                    'data-action': 'handleDeleteAccount',
+                    'data-user-id': user.id,
+                    title: 'Delete Account',
+                    type: 'button',
+                    'aria-label': 'Delete account'
+                }, '×');
+                
+                userItem.appendChild(userInfo);
+                userItem.appendChild(deleteBtn);
+                container.appendChild(userItem);
+            });
         }
-
-        // Switch to previous user
-        async function switchToUser(userId) {
+        
+        // Helper function for switchToUser with event delegation
+        function switchToUser(userId) {
+            const id = userId || (typeof arguments[0] === 'string' ? arguments[0] : null);
+            if (!id) {
+                // Try to get from event target
+                const target = arguments[0]?.currentTarget || arguments[0]?.target;
+                if (target) {
+                    const userItem = target.closest('.previous-user-item');
+                    if (userItem) {
+                        id = userItem.dataset.userId;
+                    }
+                }
+            }
+            if (!id) return;
+            
+            // Call the actual switch function
+            switchToUserActual(id);
+        }
+        
+        // Actual switch function
+        async function switchToUserActual(userId) {
             const previousUsers = getPreviousUsers();
             const userData = previousUsers.find(user => user.id === userId);
 
@@ -841,7 +973,7 @@
             storePreviousUser(fullUserData); // Update last used time
 
             window.currentUser = fullUserData;
-            document.getElementById('currentUserName').textContent = userData.name;
+            DOMUtils.setText('currentUserName', userData.name);
             showMainContent();
             loadGroups();
 
@@ -854,17 +986,38 @@
 
             showNotification(`Switched to ${userData.name}`);
         }
+        
+        // Helper function for handleDeleteAccount with event delegation
+        function handleDeleteAccount(userId, event) {
+            const id = userId || (event?.target?.dataset?.userId);
+            if (!id) {
+                // Try to get from event target
+                const target = event?.target || event?.currentTarget;
+                if (target) {
+                    const userItem = target.closest('.previous-user-item');
+                    if (userItem) {
+                        id = userItem.dataset.userId;
+                    }
+                }
+            }
+            if (!id) return;
+            
+            // Stop propagation if event provided
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            // Call the actual delete function
+            handleDeleteAccountActual(id);
+        }
+
 
         // ========================================
         // DELETE ACCOUNT FUNCTIONALITY (ENHANCED FOR CROSS ICON)
         // ========================================
 
         // FIXED: Enhanced delete account function triggered by cross icon
-        async function handleDeleteAccount(userId, event) {
-            if (event) {
-                event.stopPropagation(); // Prevent switching to user
-            }
-
+        async function handleDeleteAccountActual(userId) {
             // Get user data
             const previousUsers = getPreviousUsers();
             const userData = previousUsers.find(user => user.id === userId) || 
@@ -877,9 +1030,10 @@
 
             const userName = userData.name;
 
-            const confirmation = confirm(
+            const confirmation = await ModalUtils.confirm(
                 `WARNING: This will permanently delete the account "${userName}" and ALL associated groups and expenses!\n\n` +
-                `This action cannot be undone. Are you absolutely sure?`
+                `This action cannot be undone. Are you absolutely sure?`,
+                { danger: true, confirmText: 'Yes, Delete', cancelText: 'Cancel' }
             );
 
             if (!confirmation) {
@@ -887,11 +1041,12 @@
                 return;
             }
 
-            const finalConfirm = confirm(
+            const finalConfirm = await ModalUtils.confirm(
                 `FINAL CONFIRMATION!\n\n` +
                 `Delete user: ${userName} (ID: ${userId})\n` +
                 `This will delete ALL their data forever.\n\n` +
-                `Click OK to proceed or Cancel to stop.`
+                `Click OK to proceed or Cancel to stop.`,
+                { danger: true, confirmText: 'Delete Forever', cancelText: 'Cancel' }
             );
 
             if (!finalConfirm) {
@@ -905,16 +1060,16 @@
                 // Delete from database (if function exists)
                 if (typeof window.deleteUserFromDatabase === 'function') {
                     try {
-                        console.log('Attempting database deletion for user:', userId);
-                        console.log('This will delete ALL groups created by this user and ALL expenses in those groups');
+                        Logger?.info('Attempting database deletion for user:', userId);
+                        Logger?.info('This will delete ALL groups created by this user and ALL expenses in those groups');
                         await window.deleteUserFromDatabase(userId);
-                        console.log('Database deletion successful - user, groups, and expenses deleted');
+                        Logger?.info('Database deletion successful - user, groups, and expenses deleted');
                     } catch (dbError) {
-                        console.warn('Database deletion failed:', dbError);
+                        Logger?.warn('Database deletion failed:', dbError);
                         showNotification(`Cloud deletion failed for "${userName}", but local data will be cleared`, 'warning');
                     }
                 } else {
-                    console.log('Database deletion function not available');
+                    Logger?.debug('Database deletion function not available');
                 }
 
                 // Remove from previous users list
@@ -927,7 +1082,7 @@
                     localStorage.removeItem('spliteasy_groups');  // This removes all groups and their expenses
                     window.currentUser = null;
                     window.groups = [];
-                    console.log('All user data cleared from localStorage');
+                    Logger?.info('All user data cleared from localStorage');
 
                     showNotification(`Account "${userName}" deleted successfully`, 'success');
 
@@ -943,34 +1098,46 @@
                 }
 
             } catch (error) {
-                console.error('Failed to delete user:', error);
-                showNotification(`Account deletion failed for "${userName}": ` + error.message, 'error');
+                Logger?.error('Failed to delete user:', error);
+                ErrorHandler?.handle(error, 'handleDeleteAccount', true);
             }
         }
 
         // Show new user form
         function showNewUserForm() {
-            document.getElementById('previousUsersSection').style.display = 'none';
-            document.getElementById('newUserForm').style.display = 'block';
+            const previousSection = DOMUtils.get('previousUsersSection');
+            const newUserForm = DOMUtils.get('newUserForm');
+            if (previousSection) previousSection.style.display = 'none';
+            if (newUserForm) newUserForm.style.display = 'block';
 
             // Clear form
-            document.getElementById('userName').value = '';
-            document.getElementById('userIdInput').value = '';
+            const userNameInput = DOMUtils.get('userName');
+            const userIdInput = DOMUtils.get('userIdInput');
+            const continueBtn = DOMUtils.get('continueBtn');
+            if (userNameInput) userNameInput.value = '';
+            if (userIdInput) userIdInput.value = '';
             resetUserIdStatus();
-            document.getElementById('continueBtn').disabled = true;
+            if (continueBtn) continueBtn.disabled = true;
             isUserIdAvailable = false;
 
             setupUserIdInput();
+            // Focus on name input for accessibility
+            setTimeout(() => DOMUtils.focus('userName'), 100);
         }
 
         // ========================================
         // MAIN APP FUNCTIONS
         // ========================================
         function showMainContent() {
-            const userLoginModal = document.getElementById('userLoginModal');
-            const mainApp = document.getElementById('mainAppContent');
+            const userLoginModal = DOMUtils.get('userLoginModal');
+            const mainApp = DOMUtils.get('mainAppContent');
             if (userLoginModal) userLoginModal.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'block';
+            if (mainApp) {
+                mainApp.style.display = 'block';
+                // Set focus to main content for screen readers
+                mainApp.setAttribute('tabindex', '-1');
+                mainApp.focus();
+            }
         }
 
         async function loadGroups() {
@@ -981,7 +1148,7 @@
                 }
 
                 if (!window.currentUser) {
-                    console.warn('No user logged in, cannot load groups');
+                    Logger?.warn('No user logged in, cannot load groups');
                     window.groups = [];
                     displayGroups();
                     return;
@@ -1028,7 +1195,7 @@
                             
                             // If group has supabaseId but doesn't exist in DB, it was deleted - remove it
                             if (hasSupabaseId) {
-                                console.log('🗑️ Group was synced to DB but no longer exists - removing from localStorage:', localGroup.name);
+                                Logger?.debug('Group was synced to DB but no longer exists - removing from localStorage:', localGroup.name);
                                 groupsToRemove.push(localGroup);
                             } else {
                                 // Group was never synced to DB - might be newly created or joined
@@ -1052,14 +1219,14 @@
                                 if (isMember || isCreator) {
                                     // User is a member/creator and group was never synced - might be newly joined, add it
                                     mergedGroups.push(localGroup);
-                                    console.log('✅ Adding local group to list (not in DB but user is member, never synced):', localGroup.name, 'User:', userId, 'Members:', members);
+                                    Logger?.debug('Adding local group to list (not in DB but user is member, never synced):', localGroup.name);
                                 } else {
-                                    console.log('❌ Skipping local group (user not a member and not in DB):', localGroup.name, 'User:', userId, 'Name:', userName, 'Members:', members, 'CreatedBy:', localGroup.createdBy || localGroup.created_by);
+                                    Logger?.debug('Skipping local group (user not a member and not in DB):', localGroup.name);
                                     groupsToRemove.push(localGroup);
                                 }
                             }
                         } else {
-                            console.log('ℹ️ Local group already in DB:', localGroup.name);
+                            Logger?.debug('Local group already in DB:', localGroup.name);
                         }
                     });
                     
@@ -1090,11 +1257,11 @@
                                         invalidateGroupsCache();
                                     }
                                 } catch (error) {
-                                    console.error('Failed to save filtered groups to localStorage:', error);
+                                    Logger?.error('Failed to save filtered groups to localStorage:', error);
                                     return;
                                 }
                             }
-                            console.log('Removed', allLocalGroups.length - filteredGroups.length, 'group(s) from localStorage (not in DB or user not a member)');
+                            Logger?.info('Removed', allLocalGroups.length - filteredGroups.length, 'group(s) from localStorage (not in DB or user not a member)');
                         }
                     }
                     
@@ -1105,17 +1272,18 @@
                         localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
                     }
                     
-                    console.log('Loaded', window.groups.length, 'groups (', dbGroups?.length || 0, 'from DB,', localGroups.length, 'from local)');
+                    Logger?.info('Loaded', window.groups.length, 'groups (', dbGroups?.length || 0, 'from DB,', localGroups.length, 'from local)');
                 } else {
                     throw new Error('fetchAllGroupsFromDatabase function not available');
                 }
             } catch (error) {
-                console.error('Failed to load groups from Supabase:', error);
+                Logger?.error('Failed to load groups from Supabase:', error);
+                ErrorHandler?.handle(error, 'loadGroups', false);
                 
                 // Fallback to localStorage cache if available
                 const cachedGroups = loadFromLocalStorage();
                 if (cachedGroups.length > 0) {
-                    console.warn('Using cached groups from localStorage');
+                    Logger?.warn('Using cached groups from localStorage');
                     window.groups = cachedGroups;
                     showNotification('Using cached data. Some features may be limited.', 'warning');
                 } else {
@@ -1132,7 +1300,7 @@
                 const data = localStorage.getItem('spliteasy_groups');
                 return data ? JSON.parse(data) : [];
             } catch (error) {
-                console.error('Error loading from localStorage:', error);
+                Logger?.error('Error loading from localStorage:', error);
                 return [];
             }
         }
@@ -1164,14 +1332,14 @@
                             if (typeof invalidateGroupsCache === 'function') {
                                 invalidateGroupsCache();
                             }
-                            console.log('Data saved to localStorage');
+                            Logger?.debug('Data saved to localStorage');
                         });
                     } else {
                         localStorage.setItem('spliteasy_groups', JSON.stringify(window.groups));
-                        console.log('Data saved to localStorage');
+                        Logger?.debug('Data saved to localStorage');
                     }
                 } catch (error) {
-                    console.error('Failed to save to localStorage:', error);
+                    Logger?.error('Failed to save to localStorage:', error);
                 }
             };
 
@@ -1188,9 +1356,11 @@
         }
 
         function displayGroups() {
-            const groupsList = document.getElementById('groupsList');
-            const emptyState = document.getElementById('emptyState');
-            const groupCount = document.getElementById('groupCount');
+            const groupsList = DOMUtils.get('groupsList');
+            const emptyState = DOMUtils.get('emptyState');
+            const groupCount = DOMUtils.get('groupCount');
+
+            if (!groupsList || !emptyState || !groupCount) return;
 
             if (window.groups.length === 0) {
                 groupsList.style.display = 'none';
@@ -1203,44 +1373,101 @@
             emptyState.style.display = 'none';
             groupCount.textContent = `${window.groups.length} group${window.groups.length !== 1 ? 's' : ''}`;
 
-            groupsList.innerHTML = window.groups.map(group => `
-                <div class="group-card">
-                    <div class="group-card-header">
-                        <div class="group-card-actions">
-                            <button class="group-action-btn edit" onclick="editGroup('${group.id}')" title="Edit Group">✎</button>
-                            <button class="group-action-btn delete" onclick="deleteGroup('${group.id}')" title="Delete Group">×</button>
-                        </div>
-                    </div>
-                    <div class="group-card-content" onclick="openGroup('${group.id}')">
-                        <div class="group-info">
-                            <h3>${group.name}</h3>
-                            <div class="group-meta">
-                                <span>${(() => {
-                                    const participants = Array.isArray(group.participants) ? group.participants : [];
-                                    const memberIds = Array.isArray(group.members) ? group.members : [];
-                                    return participants.filter(p => {
-                                        if (typeof p !== 'string') return false;
-                                        // Filter out registered member IDs
-                                        if (memberIds.includes(p)) {
-                                            return false; // This is a registered member ID, not a participant
-                                        }
-                                        // Filter out UUIDs and IDs with "user" pattern
-                                        if (p.includes('user') || p.length > 30 || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p)) {
-                                            return false; // This looks like an ID
-                                        }
-                                        return true; // This looks like a participant name
-                                    }).length;
-                                })()} members</span>
-                                <span>${group.expenses?.length || 0} expenses</span>
-                                <span>Created ${formatDate(group.createdAt)}</span>
-                            </div>
-                        </div>
-                        <div class="group-amount">
-                            ${formatCurrency(group.totalExpenses || 0)}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            // Clear and rebuild groups list safely
+            groupsList.textContent = '';
+            
+            window.groups.forEach(group => {
+                const groupCard = DOMUtils.create('div', { className: 'group-card' });
+                
+                const header = DOMUtils.create('div', { className: 'group-card-header' });
+                const actions = DOMUtils.create('div', { className: 'group-card-actions' });
+                
+                const editBtn = DOMUtils.create('button', {
+                    className: 'group-action-btn edit',
+                    'data-action': 'editGroup',
+                    'data-group-id': group.id,
+                    title: 'Edit Group',
+                    type: 'button',
+                    'aria-label': 'Edit group'
+                }, '✎');
+                
+                const deleteBtn = DOMUtils.create('button', {
+                    className: 'group-action-btn delete',
+                    'data-action': 'deleteGroup',
+                    'data-group-id': group.id,
+                    title: 'Delete Group',
+                    type: 'button',
+                    'aria-label': 'Delete group'
+                }, '×');
+                
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+                header.appendChild(actions);
+                
+                const content = DOMUtils.create('div', {
+                    className: 'group-card-content',
+                    'data-action': 'openGroup',
+                    'data-group-id': group.id
+                });
+                
+                const groupInfo = DOMUtils.create('div', { className: 'group-info' });
+                const h3 = DOMUtils.create('h3', {}, escapeHtml(group.name));
+                
+                const meta = DOMUtils.create('div', { className: 'group-meta' });
+                
+                // Calculate participant count
+                const participants = Array.isArray(group.participants) ? group.participants : [];
+                const memberIds = Array.isArray(group.members) ? group.members : [];
+                const participantCount = participants.filter(p => {
+                    if (typeof p !== 'string') return false;
+                    if (memberIds.includes(p)) return false;
+                    if (p.includes('user') || p.length > 30 || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p)) {
+                        return false;
+                    }
+                    return true;
+                }).length;
+                
+                const membersSpan = DOMUtils.create('span', {}, `${participantCount} members`);
+                const expensesSpan = DOMUtils.create('span', {}, `${group.expenses?.length || 0} expenses`);
+                const createdSpan = DOMUtils.create('span', {}, `Created ${formatDate(group.createdAt)}`);
+                
+                meta.appendChild(membersSpan);
+                meta.appendChild(expensesSpan);
+                meta.appendChild(createdSpan);
+                
+                groupInfo.appendChild(h3);
+                groupInfo.appendChild(meta);
+                
+                const amount = DOMUtils.create('div', { className: 'group-amount' }, formatCurrency(group.totalExpenses || 0));
+                
+                content.appendChild(groupInfo);
+                content.appendChild(amount);
+                
+                groupCard.appendChild(header);
+                groupCard.appendChild(content);
+                
+                groupsList.appendChild(groupCard);
+            });
+        }
+        
+        // Helper function for openGroup with event delegation
+        function openGroup(groupId) {
+            const id = groupId || (arguments[0]?.target?.dataset?.groupId);
+            if (!id) {
+                const target = arguments[0]?.target || arguments[0]?.currentTarget;
+                if (target) {
+                    const groupCard = target.closest('.group-card');
+                    if (groupCard) {
+                        const content = groupCard.querySelector('.group-card-content');
+                        if (content) {
+                            id = content.dataset.groupId;
+                        }
+                    }
+                }
+            }
+            if (id) {
+                window.location.href = `group-detail.html?id=${id}`;
+            }
         }
 
         // ========================================
@@ -1254,33 +1481,48 @@
                 return;
             }
             
-            document.getElementById('createGroupModal').style.display = 'block';
-            document.getElementById('groupName').value = '';
+            const modal = DOMUtils.get('createGroupModal');
+            const groupNameInput = DOMUtils.get('groupName');
+            if (modal) modal.style.display = 'block';
+            if (groupNameInput) {
+                groupNameInput.value = '';
+                // Focus on group name input for accessibility
+                setTimeout(() => DOMUtils.focus('groupName'), 100);
+            }
             setupMemberSelection();
         }
 
         function closeCreateGroupModal() {
-            document.getElementById('createGroupModal').style.display = 'none';
+            const modal = DOMUtils.get('createGroupModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
             // Clear dynamic members
-            document.getElementById('dynamicMembers').innerHTML = '';
+            const dynamicMembers = DOMUtils.get('dynamicMembers');
+            if (dynamicMembers) {
+                dynamicMembers.textContent = '';
+            }
             dynamicMemberCounter = 0;
         }
 
         function setupMemberSelection() {
-            const grid = document.getElementById('memberSelectionGrid');
+            const grid = DOMUtils.get('memberSelectionGrid');
+            if (!grid) return;
             
             // Check if user is logged in
             if (!window.currentUser) {
-                console.warn('No user logged in, showing login modal');
+                Logger?.warn('No user logged in, showing login modal');
                 showUserLoginModal(false);
                 return;
             }
             
-            grid.innerHTML = `
-                <div class="selectable-box selected" data-member="${window.currentUser.name}">
-                    ${window.currentUser.name}
-                </div>
-            `;
+            // Clear and rebuild grid safely
+            grid.textContent = '';
+            const userBox = DOMUtils.create('div', {
+                className: 'selectable-box selected',
+                'data-member': window.currentUser.name
+            }, window.currentUser.name);
+            grid.appendChild(userBox);
         }
 
         function selectAllMembers() {
@@ -1299,10 +1541,49 @@
             });
         }
 
-        function addNewMember() {
-            const input = document.getElementById('newMemberInput');
-            const memberName = input.value.trim();
+        // Helper function to create member item safely
+        function createMemberItem(memberName, itemId, isEditMode = false) {
+            const memberItem = DOMUtils.create('div', { 
+                className: 'dynamic-item',
+                id: itemId
+            });
+            
+            const content = DOMUtils.create('div', { className: 'dynamic-item-content' });
+            const nameSpan = DOMUtils.create('span', { className: 'dynamic-item-name' }, memberName);
+            content.appendChild(nameSpan);
+            
+            const actions = DOMUtils.create('div', { className: 'dynamic-item-actions' });
+            const editBtn = DOMUtils.create('button', {
+                className: 'icon-btn edit',
+                'data-action': isEditMode ? 'editEditMember' : 'editMember',
+                'data-item-id': itemId,
+                title: 'Edit',
+                type: 'button',
+                'aria-label': 'Edit member'
+            }, '✎');
+            const deleteBtn = DOMUtils.create('button', {
+                className: 'icon-btn delete',
+                'data-action': isEditMode ? 'removeEditMember' : 'removeMember',
+                'data-item-id': itemId,
+                title: 'Remove',
+                type: 'button',
+                'aria-label': 'Remove member'
+            }, '×');
+            
+            actions.appendChild(editBtn);
+            actions.appendChild(deleteBtn);
+            
+            memberItem.appendChild(content);
+            memberItem.appendChild(actions);
+            
+            return memberItem;
+        }
 
+        function addNewMember() {
+            const input = DOMUtils.get('newMemberInput');
+            if (!input) return;
+            
+            const memberName = input.value.trim();
             if (!memberName) return;
 
             // Check for duplicates
@@ -1314,31 +1595,25 @@
                 return;
             }
 
-            const dynamicContainer = document.getElementById('dynamicMembers');
+            const dynamicContainer = DOMUtils.get('dynamicMembers');
+            if (!dynamicContainer) return;
+            
             const itemId = `member${dynamicMemberCounter++}`;
-            const memberItem = document.createElement('div');
-            memberItem.className = 'dynamic-item';
-            memberItem.id = itemId;
-            memberItem.innerHTML = `
-                <div class="dynamic-item-content">
-                    <span class="dynamic-item-name">${memberName}</span>
-                </div>
-                <div class="dynamic-item-actions">
-                    <button class="icon-btn edit" onclick="editMember('${itemId}')" title="Edit">✎</button>
-                    <button class="icon-btn delete" onclick="removeMember('${itemId}')" title="Remove">×</button>
-                </div>
-            `;
-
+            const memberItem = createMemberItem(memberName, itemId, false);
             dynamicContainer.appendChild(memberItem);
             input.value = '';
             showNotification('Member added successfully', 'success');
         }
 
-        function editMember(itemId) {
-            const item = document.getElementById(itemId);
+        async function editMember(itemId) {
+            const item = DOMUtils.get(itemId);
+            if (!item) return;
+            
             const nameEl = item.querySelector('.dynamic-item-name');
+            if (!nameEl) return;
+            
             const currentName = nameEl.textContent;
-            const newName = prompt('Edit member name:', currentName);
+            const newName = await ModalUtils.prompt('Edit member name:', currentName);
 
             if (newName && newName.trim() && newName.trim() !== currentName) {
                 nameEl.textContent = newName.trim();
@@ -1346,15 +1621,21 @@
             }
         }
 
-        function removeMember(itemId) {
-            if (confirm('Remove this member?')) {
-                document.getElementById(itemId).remove();
-                showNotification('Member removed', 'success');
+        async function removeMember(itemId) {
+            const confirmed = await ModalUtils.confirm('Remove this member?');
+            if (confirmed) {
+                const item = DOMUtils.get(itemId);
+                if (item) {
+                    item.remove();
+                    showNotification('Member removed', 'success');
+                }
             }
         }
 
         async function createGroup() {
-            const groupName = document.getElementById('groupName').value.trim();
+            const groupNameInput = DOMUtils.get('groupName');
+            if (!groupNameInput) return;
+            const groupName = groupNameInput.value.trim();
 
             // Get selected members from boxes
             const selectedBoxes = document.querySelectorAll('#memberSelectionGrid .selectable-box.selected');
@@ -1415,7 +1696,7 @@
                     throw new Error('Group sync returned no result');
                 }
                 
-                console.log('✅ Group created in Supabase:', result);
+                Logger?.info('Group created in Supabase:', result);
                 
                 // Add to local array and cache
                 window.groups.push(newGroup);
@@ -1428,14 +1709,14 @@
                 // Reload groups from Supabase to ensure sync
                 await loadGroups();
             } catch (error) {
-                console.error('❌ Failed to create group in Supabase:', error);
-                console.error('Error details:', {
+                Logger?.error('Failed to create group in Supabase:', error);
+                Logger?.error('Error details:', {
                     message: error.message,
                     code: error.code,
                     details: error.details,
                     hint: error.hint
                 });
-                showNotification(`Failed to create group: ${error.message || 'Please check your connection'}`, 'error');
+                ErrorHandler?.handle(error, 'createGroup', true);
             }
         }
 
@@ -1445,27 +1726,26 @@
 
         // FIXED: Edit Group function - main entry point
         function editGroup(groupId) {
-            console.log('Edit group clicked for ID:', groupId);
-
-            if (!groupId) {
-                console.error('No group ID provided');
+            const id = groupId || (arguments[0]?.target?.dataset?.groupId);
+            if (!id) {
+                Logger?.error('No group ID provided');
                 showNotification('Group not found', 'error');
                 return;
             }
 
             // Find the group
-            const group = window.groups.find(g => g.id === groupId);
+            const group = window.groups.find(g => g.id === id);
             if (!group) {
-                console.error('Group not found:', groupId);
-                console.log('Available groups:', window.groups.map(g => ({id: g.id, name: g.name})));
+                Logger?.error('Group not found:', id);
+                Logger?.debug('Available groups:', window.groups.map(g => ({id: g.id, name: g.name})));
                 showNotification('Group not found', 'error');
                 return;
             }
 
-            console.log('Found group for editing:', group.name);
+            Logger?.debug('Found group for editing:', group.name);
 
             // Set editing group ID
-            editingGroupId = groupId;
+            editingGroupId = id;
 
             // Show edit modal
             showEditGroupModal(group);
@@ -1473,45 +1753,45 @@
 
         // Show edit group modal with group data
         function showEditGroupModal(group) {
-            console.log('Setting up edit modal for:', group.name);
+            Logger?.debug('Setting up edit modal for:', group.name);
 
             // Clear any previous dynamic members
-            const editDynamicContainer = document.getElementById('editDynamicMembers');
+            const editDynamicContainer = DOMUtils.get('editDynamicMembers');
             if (editDynamicContainer) {
-                editDynamicContainer.innerHTML = '';
+                editDynamicContainer.textContent = '';
             }
             editDynamicMemberCounter = 0;
 
             // Populate group name
-            const editGroupNameInput = document.getElementById('editGroupName');
+            const editGroupNameInput = DOMUtils.get('editGroupName');
             if (editGroupNameInput) {
                 editGroupNameInput.value = group.name;
-                console.log('Group name populated:', group.name);
+                Logger?.debug('Group name populated:', group.name);
             }
 
             // Setup members grid
             setupEditMemberSelection(group);
 
             // Show modal
-            const modal = document.getElementById('editGroupModal');
+            const modal = DOMUtils.get('editGroupModal');
             if (modal) {
                 modal.style.display = 'block';
-                console.log('Edit group modal displayed');
+                Logger?.debug('Edit group modal displayed');
             }
         }
 
         // Setup edit member selection grid
         function setupEditMemberSelection(group) {
-            const grid = document.getElementById('editMemberSelectionGrid');
+            const grid = DOMUtils.get('editMemberSelectionGrid');
             if (!grid) {
-                console.error('Edit member selection grid not found');
+                Logger?.error('Edit member selection grid not found');
                 return;
             }
 
             // Clear dynamic members container
-            const dynamicContainer = document.getElementById('editDynamicMembers');
+            const dynamicContainer = DOMUtils.get('editDynamicMembers');
             if (dynamicContainer) {
-                dynamicContainer.innerHTML = '';
+                dynamicContainer.textContent = '';
             }
 
             // Show only participants (manually added names), not registered members
@@ -1566,20 +1846,28 @@
                 return p; // This looks like a participant name
             }).filter(p => p !== null); // Remove nulls (filtered out IDs)
 
-            console.log('Setting up edit members for participants:', participantNames);
+            Logger?.debug('Setting up edit members for participants:', participantNames);
 
             if (participantNames.length === 0) {
-                grid.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem;">No participants yet. Add participants below.</p>';
+                const emptyMsg = DOMUtils.create('p', {
+                    style: 'color: var(--text-secondary); padding: 1rem;'
+                }, 'No participants yet. Add participants below.');
+                grid.textContent = '';
+                grid.appendChild(emptyMsg);
                 return;
             }
 
-            grid.innerHTML = participantNames.map(person => `
-                <div class="selectable-box selected" data-member="${person}">
-                    ${person}
-                </div>
-            `).join('');
+            // Clear and rebuild grid safely
+            grid.textContent = '';
+            participantNames.forEach(person => {
+                const box = DOMUtils.create('div', {
+                    className: 'selectable-box selected',
+                    'data-member': person
+                }, escapeHtml(person));
+                grid.appendChild(box);
+            });
 
-            console.log('Edit members grid populated');
+            Logger?.debug('Edit members grid populated');
         }
 
         // Edit group member selection functions
@@ -1597,9 +1885,10 @@
 
         // Add new member in edit mode
         function addNewEditMember() {
-            const input = document.getElementById('editNewMemberInput');
-            const memberName = input ? input.value.trim() : '';
-
+            const input = DOMUtils.get('editNewMemberInput');
+            if (!input) return;
+            
+            const memberName = input.value.trim();
             if (!memberName) {
                 showNotification('Please enter a member name', 'error');
                 return;
@@ -1614,41 +1903,29 @@
                 return;
             }
 
-            const dynamicContainer = document.getElementById('editDynamicMembers');
+            const dynamicContainer = DOMUtils.get('editDynamicMembers');
             if (!dynamicContainer) {
-                console.error('Edit dynamic members container not found');
+                Logger?.error('Edit dynamic members container not found');
                 return;
             }
 
             const itemId = `editMember${editDynamicMemberCounter++}`;
-            const memberItem = document.createElement('div');
-            memberItem.className = 'dynamic-item';
-            memberItem.id = itemId;
-            memberItem.innerHTML = `
-                <div class="dynamic-item-content">
-                    <span class="dynamic-item-name">${memberName}</span>
-                </div>
-                <div class="dynamic-item-actions">
-                    <button class="icon-btn edit" onclick="editEditMember('${itemId}')" title="Edit">✎</button>
-                    <button class="icon-btn delete" onclick="removeEditMember('${itemId}')" title="Remove">×</button>
-                </div>
-            `;
-
+            const memberItem = createMemberItem(memberName, itemId, true);
             dynamicContainer.appendChild(memberItem);
             input.value = '';
             showNotification('Member added successfully', 'success');
         }
 
         // Edit member in edit mode
-        function editEditMember(itemId) {
-            const item = document.getElementById(itemId);
+        async function editEditMember(itemId) {
+            const item = DOMUtils.get(itemId);
             if (!item) return;
 
             const nameEl = item.querySelector('.dynamic-item-name');
             if (!nameEl) return;
 
             const currentName = nameEl.textContent;
-            const newName = prompt('Edit member name:', currentName);
+            const newName = await ModalUtils.prompt('Edit member name:', currentName);
 
             if (newName && newName.trim() && newName.trim() !== currentName) {
                 nameEl.textContent = newName.trim();
@@ -1657,9 +1934,10 @@
         }
 
         // Remove member in edit mode
-        function removeEditMember(itemId) {
-            if (confirm('Remove this member?')) {
-                const item = document.getElementById(itemId);
+        async function removeEditMember(itemId) {
+            const confirmed = await ModalUtils.confirm('Remove this member?');
+            if (confirmed) {
+                const item = DOMUtils.get(itemId);
                 if (item) {
                     item.remove();
                     showNotification('Member removed', 'success');
@@ -1669,7 +1947,7 @@
 
         // Save edit group changes
         async function saveEditGroupChanges() {
-            console.log('Saving edit group changes...');
+            Logger?.info('Saving edit group changes...');
 
             if (!editingGroupId) {
                 showNotification('No group being edited', 'error');
@@ -1682,7 +1960,9 @@
                 return;
             }
 
-            const groupName = document.getElementById('editGroupName')?.value.trim();
+            const editGroupNameInput = DOMUtils.get('editGroupName');
+            if (!editGroupNameInput) return;
+            const groupName = editGroupNameInput.value.trim();
             if (!groupName) {
                 showNotification('Please enter a group name', 'error');
                 return;
@@ -1697,9 +1977,9 @@
 
             const allMembers = [...selectedMembers, ...dynamicMembers];
 
-            console.log('Selected participants:', selectedMembers);
-            console.log('Dynamic participants:', dynamicMembers);
-            console.log('All participants:', allMembers);
+            Logger?.debug('Selected participants:', selectedMembers);
+            Logger?.debug('Dynamic participants:', dynamicMembers);
+            Logger?.debug('All participants:', allMembers);
 
             // Validation
             if (allMembers.length < 2) {
@@ -1743,29 +2023,29 @@
                 // Reload groups from Supabase to ensure sync
                 await loadGroups();
 
-                console.log('Group updated successfully:', {
+                Logger?.info('Group updated successfully:', {
                     oldName,
                     newName: groupName,
                     members: allMembers
                 });
 
             } catch (error) {
-                console.error('Failed to save group changes:', error);
-                showNotification('Failed to update group. Please check your connection.', 'error');
+                Logger?.error('Failed to save group changes:', error);
+                ErrorHandler?.handle(error, 'saveEditGroupChanges', true);
             }
         }
 
         // Close edit group modal
         function closeEditGroupModal() {
-            const modal = document.getElementById('editGroupModal');
+            const modal = DOMUtils.get('editGroupModal');
             if (modal) {
                 modal.style.display = 'none';
             }
 
             // Clear dynamic members
-            const dynamicContainer = document.getElementById('editDynamicMembers');
+            const dynamicContainer = DOMUtils.get('editDynamicMembers');
             if (dynamicContainer) {
-                dynamicContainer.innerHTML = '';
+                dynamicContainer.textContent = '';
             }
 
             // Reset counters and editing ID
@@ -1792,123 +2072,12 @@
 
             // If user is NOT the creator, allow them to leave the group
             if (!isCreator) {
-                if (!confirm(`Are you sure you want to leave the group "${group.name}"? You will no longer see this group or its expenses.`)) {
-                    return;
-                }
-
-                try {
-                    // Remove user from group
-                    if (typeof window.removeUserFromGroup === 'function') {
-                        await window.removeUserFromGroup(editingGroupId, window.currentUser.id);
-                        console.log('User removed from group');
-                    } else {
-                        throw new Error('Remove user function not available');
-                    }
-
-                    // Remove from local array and cache
-                    window.groups = window.groups.filter(g => {
-                        const gId = g.id || g.supabaseId;
-                        const gSupabaseId = g.supabaseId || g.id;
-                        return gId !== editingGroupId && gSupabaseId !== editingGroupId;
-                    });
-                    saveToLocalStorage();
-                    displayGroups();
-                    closeEditGroupModal();
-                    showNotification('You have left the group', 'success');
-                    
-                    // Reload groups from Supabase to ensure sync
-                    await loadGroups();
-                } catch (error) {
-                    console.error('Failed to leave group:', error);
-                    
-                    // Still remove from local storage even if database update fails
-                    window.groups = window.groups.filter(g => {
-                        const gId = g.id || g.supabaseId;
-                        const gSupabaseId = g.supabaseId || g.id;
-                        return gId !== editingGroupId && gSupabaseId !== editingGroupId;
-                    });
-                    saveToLocalStorage();
-                    displayGroups();
-                    closeEditGroupModal();
-                    showNotification('Removed from your view. Group may still show if you refresh.', 'warning');
-                }
+                await handleLeaveGroup(editingGroupId, closeEditGroupModal);
                 return;
             }
 
             // Creator deletion flow
-            if (!confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`)) {
-                return;
-            }
-
-            try {
-                // REQUIRED: Delete from Supabase first
-                if (!window.supabaseClient) {
-                    throw new Error('Supabase client not available');
-                }
-
-                if (typeof window.deleteGroupFromDatabase !== 'function') {
-                    throw new Error('deleteGroupFromDatabase function not available');
-                }
-
-                showNotification('Deleting group from cloud...', 'info');
-                
-                // Get the correct group ID (could be UUID from Supabase or local ID)
-                const groupToDelete = window.groups.find(g => g.id === editingGroupId || g.supabaseId === editingGroupId);
-                const deleteGroupId = groupToDelete?.supabaseId || groupToDelete?.id || editingGroupId;
-                
-                console.log('Deleting group with ID:', deleteGroupId, 'from group:', groupToDelete);
-                
-                try {
-                    // Force delete immediately when creator deletes (no collaborative deletion needed)
-                    await window.deleteGroupFromDatabase(deleteGroupId, true);
-                    console.log('✅ Group successfully deleted from database');
-                } catch (error) {
-                    console.error('❌ Group deletion error:', error);
-                    // If group is already deleted or not found, just remove from local storage
-                    if (error.message?.includes('not found') || error.message?.includes('already deleted') || error.message?.includes('PGRST116')) {
-                        console.warn('Group already deleted from database, removing from local storage');
-                        showNotification('Group was already deleted', 'info');
-                    } else {
-                        // Show the actual error to help debug
-                        console.error('Deletion failed with error:', error.message);
-                        throw error; // Re-throw other errors
-                    }
-                }
-                
-                // Delete from local array and cache (only if DB delete succeeded)
-                // Check both the original ID and the Supabase ID
-                const deletedGroupId = groupToDelete?.supabaseId || groupToDelete?.id || editingGroupId;
-                window.groups = window.groups.filter(g => {
-                    const gId = g.id || g.supabaseId;
-                    const gSupabaseId = g.supabaseId || g.id;
-                    return gId !== deletedGroupId && gSupabaseId !== deletedGroupId && 
-                           gId !== editingGroupId && gSupabaseId !== editingGroupId;
-                });
-                saveToLocalStorage();
-                displayGroups();
-                closeEditGroupModal();
-                
-                showNotification('Group deleted successfully!', 'success');
-                
-                // Reload groups from Supabase to ensure sync and verify deletion
-                await loadGroups();
-            } catch (error) {
-                console.error('Failed to delete group:', error);
-                // Still remove from local storage if it's a "not found" error
-                if (error.message?.includes('not found') || error.message?.includes('already deleted')) {
-                    window.groups = window.groups.filter(g => {
-                        const gId = g.id || g.supabaseId;
-                        const gSupabaseId = g.supabaseId || g.id;
-                        return gId !== editingGroupId && gSupabaseId !== editingGroupId;
-                    });
-                    saveToLocalStorage();
-                    displayGroups();
-                    closeEditGroupModal();
-                    showNotification('Group removed from local storage', 'info');
-                } else {
-                    showNotification('Failed to delete group. Please check your connection.', 'error');
-                }
-            }
+            await handleDeleteGroup(editingGroupId, closeEditGroupModal);
         }
 
         // FIXED: Delete group function with database sync
@@ -1922,49 +2091,89 @@
 
             // If user is NOT the creator, allow them to leave the group
             if (!isCreator) {
-                if (!confirm(`Are you sure you want to leave the group "${group.name}"? You will no longer see this group or its expenses.`)) {
-                    return;
-                }
-
-                try {
-                    // Remove user from group
-                    if (typeof window.removeUserFromGroup === 'function') {
-                        await window.removeUserFromGroup(groupId, window.currentUser.id);
-                        console.log('User removed from group');
-                    } else {
-                        throw new Error('Remove user function not available');
-                    }
-
-                    // Remove from local array and cache
-                    window.groups = window.groups.filter(g => {
-                        const gId = g.id || g.supabaseId;
-                        const gSupabaseId = g.supabaseId || g.id;
-                        return gId !== groupId && gSupabaseId !== groupId;
-                    });
-                    saveToLocalStorage();
-                    displayGroups();
-                    showNotification('You have left the group', 'success');
-                    
-                    // Reload groups from Supabase to ensure sync
-                    await loadGroups();
-                } catch (error) {
-                    console.error('Failed to leave group:', error);
-                    
-                    // Still remove from local storage even if database update fails
-                    window.groups = window.groups.filter(g => {
-                        const gId = g.id || g.supabaseId;
-                        const gSupabaseId = g.supabaseId || g.id;
-                        return gId !== groupId && gSupabaseId !== groupId;
-                    });
-                    saveToLocalStorage();
-                    displayGroups();
-                    showNotification('Removed from your view. Group may still show if you refresh.', 'warning');
-                }
+                await handleLeaveGroup(groupId);
                 return;
             }
 
             // Creator deletion flow
-            if (!confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`)) return;
+            await handleDeleteGroup(groupId);
+        }
+
+        // ========================================
+        // UTILITY FUNCTIONS (Using shared utilities)
+        // ========================================
+        // All utility functions are now in shared-utils.js
+        // formatCurrency, formatDate, escapeHtml, formatRelativeTime, generateId, showNotification
+        // are available globally from shared-utils.js
+
+        // Helper function to remove group from local array (eliminates duplication)
+        function removeGroupFromLocalArray(groupId) {
+            window.groups = window.groups.filter(g => {
+                const gId = g.id || g.supabaseId;
+                const gSupabaseId = g.supabaseId || g.id;
+                return gId !== groupId && gSupabaseId !== groupId;
+            });
+            saveToLocalStorage();
+            displayGroups();
+        }
+
+        // Helper function to remove group with multiple ID checks (for complex deletion scenarios)
+        function removeGroupFromLocalArrayMultiple(groupId, deletedGroupId) {
+            window.groups = window.groups.filter(g => {
+                const gId = g.id || g.supabaseId;
+                const gSupabaseId = g.supabaseId || g.id;
+                return gId !== deletedGroupId && gSupabaseId !== deletedGroupId && 
+                       gId !== groupId && gSupabaseId !== groupId;
+            });
+            saveToLocalStorage();
+            displayGroups();
+        }
+
+        // Helper function to handle leaving a group (non-creator flow)
+        async function handleLeaveGroup(groupId, closeModalCallback = null) {
+            const group = window.groups.find(g => g.id === groupId);
+            if (!group) return;
+
+            const confirmed = await ModalUtils.confirm(`Are you sure you want to leave the group "${group.name}"? You will no longer see this group or its expenses.`);
+            if (!confirmed) return;
+
+            try {
+                // Remove user from group
+                if (typeof window.removeUserFromGroup === 'function') {
+                    await window.removeUserFromGroup(groupId, window.currentUser.id);
+                    Logger?.info('User removed from group');
+                } else {
+                    throw new Error('Remove user function not available');
+                }
+
+                // Remove from local array and cache
+                removeGroupFromLocalArray(groupId);
+                if (closeModalCallback) closeModalCallback();
+                showNotification('You have left the group', 'success');
+                
+                // Reload groups from Supabase to ensure sync
+                await loadGroups();
+            } catch (error) {
+                Logger?.error('Failed to leave group:', error);
+                
+                // Still remove from local storage even if database update fails
+                removeGroupFromLocalArray(groupId);
+                if (closeModalCallback) closeModalCallback();
+                showNotification('Removed from your view. Group may still show if you refresh.', 'warning');
+            }
+        }
+
+        // Helper function to handle group deletion (creator flow)
+        async function handleDeleteGroup(groupId, closeModalCallback = null) {
+            const group = window.groups.find(g => g.id === groupId);
+            if (!group) return;
+
+            const confirmed = await ModalUtils.confirm(`Are you sure you want to delete the group "${group.name}"? This action cannot be undone.`, {
+                danger: true,
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
+            if (!confirmed) return;
 
             try {
                 // REQUIRED: Delete from Supabase first
@@ -1982,21 +2191,21 @@
                 const groupToDelete = window.groups.find(g => g.id === groupId || g.supabaseId === groupId);
                 const deleteGroupId = groupToDelete?.supabaseId || groupToDelete?.id || groupId;
                 
-                console.log('Deleting group with ID:', deleteGroupId, 'from group:', groupToDelete);
+                Logger?.info('Deleting group with ID:', deleteGroupId, 'from group:', groupToDelete);
                 
                 try {
                     // Force delete immediately when creator deletes (no collaborative deletion needed)
                     await window.deleteGroupFromDatabase(deleteGroupId, true);
-                    console.log('✅ Group successfully deleted from database');
+                    Logger?.info('Group successfully deleted from database');
                 } catch (error) {
-                    console.error('❌ Group deletion error:', error);
+                    Logger?.error('Group deletion error:', error);
                     // If group is already deleted or not found, just remove from local storage
                     if (error.message?.includes('not found') || error.message?.includes('already deleted') || error.message?.includes('PGRST116')) {
-                        console.warn('Group already deleted from database, removing from local storage');
+                        Logger?.warn('Group already deleted from database, removing from local storage');
                         showNotification('Group was already deleted', 'info');
                     } else {
                         // Show the actual error to help debug
-                        console.error('Deletion failed with error:', error.message);
+                        Logger?.error('Deletion failed with error:', error.message);
                         throw error; // Re-throw other errors
                     }
                 }
@@ -2004,29 +2213,19 @@
                 // Delete from local array and cache (only if DB delete succeeded)
                 // Check both the original ID and the Supabase ID
                 const deletedGroupId = groupToDelete?.supabaseId || groupToDelete?.id || groupId;
-                window.groups = window.groups.filter(g => {
-                    const gId = g.id || g.supabaseId;
-                    const gSupabaseId = g.supabaseId || g.id;
-                    return gId !== deletedGroupId && gSupabaseId !== deletedGroupId && 
-                           gId !== groupId && gSupabaseId !== groupId;
-                });
-                saveToLocalStorage();
-                displayGroups();
+                removeGroupFromLocalArrayMultiple(groupId, deletedGroupId);
+                if (closeModalCallback) closeModalCallback();
                 showNotification('Group deleted successfully!', 'success');
                 
                 // Reload groups from Supabase to ensure sync and verify deletion
                 await loadGroups();
             } catch (error) {
-                console.error('Failed to delete group:', error);
+                Logger?.error('Failed to delete group:', error);
+                ErrorHandler?.handle(error, 'handleDeleteGroup', true);
                 // Still remove from local storage if it's a "not found" error
                 if (error.message?.includes('not found') || error.message?.includes('already deleted')) {
-                    window.groups = window.groups.filter(g => {
-                        const gId = g.id || g.supabaseId;
-                        const gSupabaseId = g.supabaseId || g.id;
-                        return gId !== groupId && gSupabaseId !== groupId;
-                    });
-                    saveToLocalStorage();
-                    displayGroups();
+                    removeGroupFromLocalArray(groupId);
+                    if (closeModalCallback) closeModalCallback();
                     showNotification('Group removed from local storage', 'info');
                 } else {
                     showNotification('Failed to delete group. Please check your connection.', 'error');
@@ -2034,150 +2233,195 @@
             }
         }
 
-        // ========================================
-        // UTILITY FUNCTIONS (Using shared utilities)
-        // ========================================
-        // All utility functions are now in shared-utils.js
-        // formatCurrency, formatDate, escapeHtml, formatRelativeTime, generateId, showNotification
-        // are available globally from shared-utils.js
 
-        function openGroup(groupId) {
-            window.location.href = `group-detail.html?id=${groupId}`;
+        // ========================================
+        // EVENT LISTENERS - Event Delegation
+        // ========================================
+
+        // Set up event delegation for all action buttons
+        function setupEventDelegation() {
+            // Action buttons with data-action attribute (click and keyboard)
+            DOMUtils.delegate(document.body, '[data-action]', 'click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const action = this.dataset.action;
+                const itemId = this.dataset.itemId;
+                const groupId = this.dataset.groupId;
+                const userId = this.dataset.userId;
+                
+                // Determine which ID to use
+                const id = itemId || groupId || userId;
+                
+                if (typeof window[action] === 'function') {
+                    if (id) {
+                        window[action](id, e);
+                    } else {
+                        window[action](e);
+                    }
+                } else {
+                    Logger?.warn('Action function not found:', action);
+                }
+            });
+            
+            // Keyboard support for action buttons (Enter and Space)
+            DOMUtils.delegate(document.body, '[data-action]', 'keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.click(); // Trigger click handler
+                }
+            });
+            
+            // Keyboard support for close buttons (Escape key)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    // Close any open modal
+                    const openModal = document.querySelector('.modal[style*="block"]');
+                    if (openModal) {
+                        const closeAction = openModal.querySelector('[data-action*="close"], .close');
+                        if (closeAction) {
+                            closeAction.click();
+                        }
+                    }
+                }
+            });
+
+            // Toggle selectable boxes
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('selectable-box')) {
+                    // Don't allow deselecting current user in create mode
+                    if (e.target.dataset.member === window.currentUser?.name && 
+                        e.target.closest('#memberSelectionGrid')) {
+                        return;
+                    }
+                    e.target.classList.toggle('selected');
+                }
+            });
+
+            // Modal close handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+
+            // Enter key for adding members
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    if (e.target.id === 'newMemberInput') {
+                        addNewMember();
+                    } else if (e.target.id === 'editNewMemberInput') {
+                        addNewEditMember();
+                    }
+                }
+            });
         }
 
-        // ========================================
-        // EVENT LISTENERS
-        // ========================================
+        // Initialize event delegation after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupEventDelegation);
+        } else {
+            setupEventDelegation();
+        }
 
-        // Toggle selectable boxes
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('selectable-box')) {
-                // Don't allow deselecting current user in create mode
-                if (e.target.dataset.member === window.currentUser?.name && 
-                    e.target.closest('#memberSelectionGrid')) {
-                    return;
+        // Enhanced Service Worker Registration with Update Detection
+        if ('serviceWorker' in navigator) {
+            Logger?.debug('Registering service worker...');
+
+            // Detect base path for GitHub Pages subdirectory
+            const basePath = window.location.pathname.split('/').slice(0, -1).join('/') || '';
+            const swPath = basePath ? `${basePath}/sw.js` : '/sw.js';
+            Logger?.debug('Service worker path:', swPath);
+
+            navigator.serviceWorker.register(swPath)
+                .then(registration => {
+                    Logger?.debug('Service worker registered:', registration);
+
+                    // Check for updates every 30 seconds
+                    setInterval(() => {
+                        registration.update();
+                    }, 30000);
+
+                    // Listen for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        Logger?.debug('New service worker found');
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                Logger?.info('New content available, will update...');
+
+                                // Show update notification
+                                if (typeof showNotification === 'function') {
+                                    showNotification('App updated! Refreshing...', 'info');
+                                }
+
+                                // Auto-refresh after 2 seconds
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 2000);
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    Logger?.warn('Service worker registration failed:', error);
+                });
+
+            // Listen for messages from service worker
+            navigator.serviceWorker.addEventListener('message', event => {
+                Logger?.debug('Message from service worker:', event.data);
+
+                if (event.data.type === 'SW_UPDATED') {
+                    if (typeof showNotification === 'function') {
+                        showNotification(event.data.message, 'success');
+                    } else {
+                        Logger?.info(event.data.message);
+                    }
                 }
-                e.target.classList.toggle('selected');
+            });
+        }
+
+        // Helper function to manually clear cache
+        window.clearAppCache = function() {
+            if ('serviceWorker' in navigator && 'caches' in window) {
+                // Send message to service worker
+                navigator.serviceWorker.controller?.postMessage({type: 'CLEAR_CACHE'});
+
+                // Also clear caches directly
+                caches.keys().then(cacheNames => {
+                    return Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                }).then(() => {
+                    Logger?.info('All caches cleared manually');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Cache cleared! App will refresh...', 'success');
+                    }
+                    setTimeout(() => window.location.reload(), 1000);
+                });
             }
-        });
+        };
 
-        // Modal close handlers
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
+        // Helper function to force update
+        window.forceAppUpdate = function() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.update().then(() => {
+                        Logger?.info('Forced service worker update');
+                        setTimeout(() => window.location.reload(), 1000);
+                    });
+                });
             }
-        });
+        };
 
-        // Enter key for adding members
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                if (e.target.id === 'newMemberInput') {
-                    addNewMember();
-                } else if (e.target.id === 'editNewMemberInput') {
-                    addNewEditMember();
-                }
-            }
-        });
-
-        <!-- Add this script to your HTML files for better cache management -->
-
-// Enhanced Service Worker Registration with Update Detection
-if ('serviceWorker' in navigator) {
-  console.log('Registering service worker...');
-
-  // Detect base path for GitHub Pages subdirectory
-  const basePath = window.location.pathname.split('/').slice(0, -1).join('/') || '';
-  const swPath = basePath ? `${basePath}/sw.js` : '/sw.js';
-  console.log('Service worker path:', swPath);
-
-  navigator.serviceWorker.register(swPath)
-    .then(registration => {
-      console.log('Service worker registered:', registration);
-
-      // Check for updates every 30 seconds
-      setInterval(() => {
-        registration.update();
-      }, 30000);
-
-      // Listen for updates
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        console.log('New service worker found');
-
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('New content available, will update...');
-
-            // Show update notification
-            if (typeof showNotification === 'function') {
-              showNotification('App updated! Refreshing...', 'info');
-            }
-
-            // Auto-refresh after 2 seconds
-            setTimeout(() => {
-              window.location.reload();
-            }, 2000);
-          }
-        });
-      });
-    })
-    .catch(error => {
-      console.log('Service worker registration failed:', error);
-    });
-
-  // Listen for messages from service worker
-  navigator.serviceWorker.addEventListener('message', event => {
-    console.log('Message from service worker:', event.data);
-
-    if (event.data.type === 'SW_UPDATED') {
-      if (typeof showNotification === 'function') {
-        showNotification(event.data.message, 'success');
-      } else {
-        console.log(event.data.message);
-      }
-    }
-  });
-}
-
-// Helper function to manually clear cache
-window.clearAppCache = function() {
-  if ('serviceWorker' in navigator && 'caches' in window) {
-    // Send message to service worker
-    navigator.serviceWorker.controller?.postMessage({type: 'CLEAR_CACHE'});
-
-    // Also clear caches directly
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => caches.delete(cacheName))
-      );
-    }).then(() => {
-      console.log('All caches cleared manually');
-      if (typeof showNotification === 'function') {
-        showNotification('Cache cleared! App will refresh...', 'success');
-      }
-      setTimeout(() => window.location.reload(), 1000);
-    });
-  }
-};
-
-// Helper function to force update
-window.forceAppUpdate = function() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready.then(registration => {
-      registration.update().then(() => {
-        console.log('Forced service worker update');
-        setTimeout(() => window.location.reload(), 1000);
-      });
-    });
-  }
-};
-
-console.log('Cache management helpers loaded');
-console.log('Use window.clearAppCache() to clear cache manually');  
-console.log('Use window.forceAppUpdate() to force update');
+        Logger?.debug('Cache management helpers loaded');
+        Logger?.debug('Use window.clearAppCache() to clear cache manually');  
+        Logger?.debug('Use window.forceAppUpdate() to force update');
 
         // Debug: Log when script is fully loaded
-        console.log('Index.html script fully loaded');
+        Logger?.debug('Index.html script fully loaded');
     </script>
 </body>
 </html>
