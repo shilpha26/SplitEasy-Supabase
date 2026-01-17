@@ -119,16 +119,25 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="expenseDescription">Description</label>
-                    <input type="text" id="expenseDescription" placeholder="e.g., Dinner, Gas, Groceries" required>
+                    <input type="text" id="expenseDescription" placeholder="e.g., Dinner, Gas, Groceries" maxlength="200" required>
+                    <small class="form-help" id="expenseDescriptionHelp">Max 200 characters</small>
                 </div>
                 <div class="form-group">
                     <label for="expenseAmount">Amount (₹)</label>
-                    <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" required>
+                    <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" min="0.01" max="10000000" required oninput="validateExpenseAmount(this)">
+                    <small class="form-help" id="expenseAmountHelp">Enter amount between ₹0.01 and ₹10,000,000</small>
                 </div>
                 <div class="form-group">
                     <label for="expensePaidBy">Paid By</label>
                     <select id="expensePaidBy" required>
                         <option value="">Select who paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expenseSplitType">Split Type</label>
+                    <select id="expenseSplitType" onchange="handleSplitTypeChange()">
+                        <option value="equal">Equal Split</option>
+                        <option value="custom">Custom Amounts</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -143,6 +152,16 @@
                         </div>
                         <div class="selectable-grid" id="expenseSplitGrid">
                             <!-- Member checkboxes will be added here -->
+                        </div>
+                    </div>
+                    <!-- Custom Amounts Inputs (hidden by default) -->
+                    <div id="customAmountsContainer" style="display: none; margin-top: 1rem;">
+                        <div class="custom-amounts-header">
+                            <span>Enter amount for each person:</span>
+                            <span id="customAmountsTotal" class="custom-amounts-total">Total: ₹0.00</span>
+                        </div>
+                        <div id="customAmountsList" class="custom-amounts-list">
+                            <!-- Custom amount inputs will be added here -->
                         </div>
                     </div>
                 </div>
@@ -164,16 +183,25 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="editExpenseDescription">Description</label>
-                    <input type="text" id="editExpenseDescription" placeholder="e.g., Dinner, Gas, Groceries" required>
+                    <input type="text" id="editExpenseDescription" placeholder="e.g., Dinner, Gas, Groceries" maxlength="200" required>
+                    <small class="form-help" id="editExpenseDescriptionHelp">Max 200 characters</small>
                 </div>
                 <div class="form-group">
                     <label for="editExpenseAmount">Amount (₹)</label>
-                    <input type="number" id="editExpenseAmount" placeholder="0.00" step="0.01" required>
+                    <input type="number" id="editExpenseAmount" placeholder="0.00" step="0.01" min="0.01" max="10000000" required oninput="validateExpenseAmount(this)">
+                    <small class="form-help" id="editExpenseAmountHelp">Enter amount between ₹0.01 and ₹10,000,000</small>
                 </div>
                 <div class="form-group">
                     <label for="editExpensePaidBy">Paid By</label>
                     <select id="editExpensePaidBy" required>
                         <option value="">Select who paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editExpenseSplitType">Split Type</label>
+                    <select id="editExpenseSplitType" onchange="handleEditSplitTypeChange()">
+                        <option value="equal">Equal Split</option>
+                        <option value="custom">Custom Amounts</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -188,6 +216,16 @@
                         </div>
                         <div class="selectable-grid" id="editExpenseSplitGrid">
                             <!-- Member checkboxes will be added here -->
+                        </div>
+                    </div>
+                    <!-- Custom Amounts Inputs (hidden by default) -->
+                    <div id="editCustomAmountsContainer" style="display: none; margin-top: 1rem;">
+                        <div class="custom-amounts-header">
+                            <span>Enter amount for each person:</span>
+                            <span id="editCustomAmountsTotal" class="custom-amounts-total">Total: ₹0.00</span>
+                        </div>
+                        <div id="editCustomAmountsList" class="custom-amounts-list">
+                            <!-- Custom amount inputs will be added here -->
                         </div>
                     </div>
                 </div>
@@ -446,12 +484,23 @@
                     !name.match(/^[a-zA-Z]+\d+$/)
                 );
                 if (splitBetween.length === 0) return; // Skip if no valid participants
-                const perPerson = amount / splitBetween.length;
+                
+                // Handle unequal splits
+                let perPerson = amount / splitBetween.length;
+                if (expense.splitType === 'custom' && expense.customAmounts) {
+                    perPerson = 0; // Will be set per person below
+                }
 
                 // Each participant who is part of the split gets their share
                 splitBetween.forEach(participant => {
                     if (shareByPerson[participant] !== undefined) {
-                        shareByPerson[participant] += perPerson;
+                        if (expense.splitType === 'custom' && expense.customAmounts && expense.customAmounts[participant] !== undefined) {
+                            // Use custom amount for this person
+                            shareByPerson[participant] += expense.customAmounts[participant];
+                        } else {
+                            // Use equal split
+                            shareByPerson[participant] += perPerson;
+                        }
                     }
                 });
             });
@@ -1607,7 +1656,12 @@
                     !name.match(/^[a-zA-Z]+\d+$/)
                 );
                 if (splitBetween.length === 0) return; // Skip if no valid participants
-                const perPerson = amount / splitBetween.length;
+                
+                // Handle unequal splits
+                let perPerson = amount / splitBetween.length;
+                if (expense.splitType === 'custom' && expense.customAmounts) {
+                    perPerson = 0; // Will be set per person below
+                }
 
                 // Person who paid gets credited (only if they're a participant)
                 if (participants.includes(expense.paidBy) && 
@@ -1622,7 +1676,13 @@
                 // Everyone who shared the expense gets debited
                 splitBetween.forEach(participant => {
                     if (balances[participant] !== undefined) {
-                        balances[participant] -= perPerson;
+                        if (expense.splitType === 'custom' && expense.customAmounts && expense.customAmounts[participant] !== undefined) {
+                            // Use custom amount for this person
+                            balances[participant] -= expense.customAmounts[participant];
+                        } else {
+                            // Use equal split
+                            balances[participant] -= perPerson;
+                        }
                     }
                 });
             });
@@ -1702,8 +1762,41 @@
             const modal = document.getElementById('addExpenseModal');
             const paidBySelect = document.getElementById('expensePaidBy');
             const splitGrid = document.getElementById('expenseSplitGrid');
+            const splitTypeSelect = document.getElementById('expenseSplitType');
+            const amountInput = document.getElementById('expenseAmount');
+            const descriptionInput = document.getElementById('expenseDescription');
 
             if (modal) modal.style.display = 'block';
+
+            // Reset split type to equal
+            if (splitTypeSelect) {
+                splitTypeSelect.value = 'equal';
+                handleSplitTypeChange();
+            }
+            
+            // Add real-time validation listeners
+            if (amountInput) {
+                amountInput.addEventListener('input', function() {
+                    validateExpenseAmount(this);
+                });
+            }
+            
+            if (descriptionInput) {
+                descriptionInput.addEventListener('input', function() {
+                    const helpText = document.getElementById('expenseDescriptionHelp');
+                    if (helpText) {
+                        const remaining = 200 - this.value.length;
+                        helpText.textContent = `${remaining} characters remaining`;
+                        if (remaining < 20) {
+                            helpText.style.color = 'var(--warning-color)';
+                        } else if (remaining < 0) {
+                            helpText.style.color = 'var(--danger-color)';
+                        } else {
+                            helpText.style.color = 'var(--text-secondary)';
+                        }
+                    }
+                });
+            }
 
             // Populate paid by dropdown - only participants (names), not member IDs
             if (paidBySelect && currentGroup) {
@@ -1725,6 +1818,152 @@
             }
         }
 
+        // Handle split type change
+        function handleSplitTypeChange() {
+            const splitType = document.getElementById('expenseSplitType')?.value;
+            const customContainer = document.getElementById('customAmountsContainer');
+            const amountInput = document.getElementById('expenseAmount');
+            
+            if (splitType === 'custom') {
+                if (customContainer) customContainer.style.display = 'block';
+                updateCustomAmountsList();
+                // Listen to amount changes
+                if (amountInput) {
+                    amountInput.addEventListener('input', updateCustomAmountsList);
+                }
+            } else {
+                if (customContainer) customContainer.style.display = 'none';
+                if (amountInput) {
+                    amountInput.removeEventListener('input', updateCustomAmountsList);
+                }
+            }
+        }
+
+        // Update custom amounts list based on selected members
+        function updateCustomAmountsList() {
+            const selectedBoxes = document.querySelectorAll('#expenseSplitGrid .selectable-box.selected');
+            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+            const amountInput = document.getElementById('expenseAmount');
+            const totalAmount = parseFloat(amountInput?.value || 0);
+            const customList = document.getElementById('customAmountsList');
+            const totalDisplay = document.getElementById('customAmountsTotal');
+            
+            if (!customList) return;
+            
+            // Calculate equal split as default
+            const equalAmount = selectedMembers.length > 0 ? totalAmount / selectedMembers.length : 0;
+            
+            customList.innerHTML = selectedMembers.map(member => {
+                const inputId = `customAmount-${member.replace(/\s+/g, '-')}`;
+                return `
+                    <div class="custom-amount-item">
+                        <label for="${inputId}">${member}</label>
+                        <input 
+                            type="number" 
+                            id="${inputId}" 
+                            class="custom-amount-input" 
+                            data-member="${member}"
+                            value="${equalAmount.toFixed(2)}" 
+                            step="0.01" 
+                            min="0"
+                            max="10000000"
+                            oninput="validateCustomAmount(this); updateCustomAmountsTotal()"
+                        >
+                    </div>
+                `;
+            }).join('');
+            
+            updateCustomAmountsTotal();
+        }
+
+        // Validate expense amount input
+        function validateExpenseAmount(input) {
+            const value = parseFloat(input.value);
+            const helpText = input.id === 'expenseAmount' 
+                ? document.getElementById('expenseAmountHelp')
+                : document.getElementById('editExpenseAmountHelp');
+            
+            if (!helpText) return;
+            
+            if (input.value === '' || isNaN(value)) {
+                helpText.textContent = 'Enter amount between ₹0.01 and ₹10,000,000';
+                helpText.style.color = 'var(--text-secondary)';
+                input.setCustomValidity('');
+                return;
+            }
+            
+            if (value <= 0) {
+                helpText.textContent = 'Amount must be greater than ₹0.00';
+                helpText.style.color = 'var(--danger-color)';
+                input.setCustomValidity('Amount must be greater than ₹0.00');
+                input.classList.add('invalid');
+                return;
+            }
+            
+            if (value > 10000000) {
+                helpText.textContent = 'Amount cannot exceed ₹10,000,000';
+                helpText.style.color = 'var(--danger-color)';
+                input.setCustomValidity('Amount cannot exceed ₹10,000,000');
+                input.classList.add('invalid');
+                return;
+            }
+            
+            // Valid amount
+            helpText.textContent = 'Enter amount between ₹0.01 and ₹10,000,000';
+            helpText.style.color = 'var(--text-secondary)';
+            input.setCustomValidity('');
+            input.classList.remove('invalid');
+        }
+        
+        // Validate custom amount input
+        function validateCustomAmount(input) {
+            const value = parseFloat(input.value);
+            
+            if (input.value === '' || isNaN(value)) {
+                input.setCustomValidity('');
+                input.classList.remove('invalid');
+                return;
+            }
+            
+            if (value < 0) {
+                input.setCustomValidity('Amount cannot be negative');
+                input.classList.add('invalid');
+                return;
+            }
+            
+            if (value > 10000000) {
+                input.setCustomValidity('Amount cannot exceed ₹10,000,000');
+                input.classList.add('invalid');
+                return;
+            }
+            
+            // Valid amount
+            input.setCustomValidity('');
+            input.classList.remove('invalid');
+        }
+
+        // Update custom amounts total
+        function updateCustomAmountsTotal() {
+            const customInputs = document.querySelectorAll('.custom-amount-input');
+            let total = 0;
+            customInputs.forEach(input => {
+                total += parseFloat(input.value || 0);
+            });
+            
+            const totalDisplay = document.getElementById('customAmountsTotal');
+            if (totalDisplay) {
+                totalDisplay.textContent = `Total: ${formatCurrency(total)}`;
+                const amountInput = document.getElementById('expenseAmount');
+                const expectedTotal = parseFloat(amountInput?.value || 0);
+                
+                if (Math.abs(total - expectedTotal) > 0.01) {
+                    totalDisplay.style.color = 'var(--danger-color)';
+                } else {
+                    totalDisplay.style.color = 'var(--success-color)';
+                }
+            }
+        }
+
         function closeAddExpenseModal() {
             const modal = document.getElementById('addExpenseModal');
             if (modal) modal.style.display = 'none';
@@ -1734,6 +1973,12 @@
                 const element = document.getElementById(id);
                 if (element) element.value = '';
             });
+            
+            // Reset split type
+            const splitTypeSelect = document.getElementById('expenseSplitType');
+            if (splitTypeSelect) splitTypeSelect.value = 'equal';
+            const customContainer = document.getElementById('customAmountsContainer');
+            if (customContainer) customContainer.style.display = 'none';
         }
 
         function selectAllExpenseMembers() {
@@ -1755,11 +2000,37 @@
             const description = document.getElementById('expenseDescription')?.value.trim();
             const amount = document.getElementById('expenseAmount')?.value;
             const paidBy = document.getElementById('expensePaidBy')?.value;
+            const splitType = document.getElementById('expenseSplitType')?.value || 'equal';
             const selectedBoxes = document.querySelectorAll('#expenseSplitGrid .selectable-box.selected');
             const splitBetween = Array.from(selectedBoxes).map(box => box.dataset.member);
 
+            // Validation
             if (!description || !amount || !paidBy || splitBetween.length === 0) {
                 showNotification('Please fill all fields', 'error');
+                return;
+            }
+            
+            // Validate description length
+            if (description.length > 200) {
+                showNotification('Description cannot exceed 200 characters', 'error');
+                return;
+            }
+            
+            // Validate amount
+            const amountValue = parseFloat(amount);
+            if (isNaN(amountValue) || amountValue <= 0) {
+                showNotification('Amount must be greater than ₹0.00', 'error');
+                return;
+            }
+            
+            if (amountValue > 10000000) {
+                showNotification('Amount cannot exceed ₹10,000,000', 'error');
+                return;
+            }
+            
+            // Validate amount has at most 2 decimal places
+            if (amountValue % 0.01 !== 0 && amountValue % 0.01 > 0.001) {
+                showNotification('Amount can have at most 2 decimal places', 'error');
                 return;
             }
 
@@ -1770,6 +2041,51 @@
                 return;
             }
 
+            // Handle custom amounts
+            let customAmounts = {};
+            let perPersonAmount = parseFloat(amount) / splitBetween.length;
+            
+            if (splitType === 'custom') {
+                const customInputs = document.querySelectorAll('.custom-amount-input');
+                let total = 0;
+                let hasInvalidAmount = false;
+                
+                customInputs.forEach(input => {
+                    const member = input.dataset.member;
+                    const value = parseFloat(input.value || 0);
+                    
+                    // Validate individual custom amounts
+                    if (isNaN(value) || value < 0) {
+                        showNotification(`Invalid amount for ${member}. Amount must be 0 or greater.`, 'error');
+                        hasInvalidAmount = true;
+                        return;
+                    }
+                    
+                    if (value > 10000000) {
+                        showNotification(`Amount for ${member} cannot exceed ₹10,000,000`, 'error');
+                        hasInvalidAmount = true;
+                        return;
+                    }
+                    
+                    customAmounts[member] = value;
+                    total += value;
+                });
+                
+                if (hasInvalidAmount) {
+                    return;
+                }
+                
+                // Validate total matches expense amount
+                const expectedTotal = parseFloat(amount);
+                if (Math.abs(total - expectedTotal) > 0.01) {
+                    showNotification(`Custom amounts total (${formatCurrency(total)}) must equal expense amount (${formatCurrency(expectedTotal)})`, 'error');
+                    return;
+                }
+                
+                // Calculate average for perPersonAmount (for backward compatibility)
+                perPersonAmount = total / splitBetween.length;
+            }
+
             const newExpense = {
                 id: generateId(),
                 name: description,
@@ -1777,7 +2093,9 @@
                 paidBy: paidBy,
                 splitBetween: splitBetween,
                 date: new Date().toISOString(),
-                perPersonAmount: parseFloat(amount) / splitBetween.length
+                perPersonAmount: perPersonAmount,
+                splitType: splitType,
+                customAmounts: splitType === 'custom' ? customAmounts : undefined
             };
 
             console.log('📝 New expense created:', newExpense);
@@ -1858,8 +2176,42 @@
             editingExpenseId = expenseId;
 
             // Populate form
-            document.getElementById('editExpenseDescription').value = expense.name;
-            document.getElementById('editExpenseAmount').value = expense.amount;
+            const descriptionInput = document.getElementById('editExpenseDescription');
+            const amountInput = document.getElementById('editExpenseAmount');
+            
+            if (descriptionInput) descriptionInput.value = expense.name;
+            if (amountInput) amountInput.value = expense.amount;
+            
+            // Set split type
+            const splitTypeSelect = document.getElementById('editExpenseSplitType');
+            const splitType = expense.splitType || 'equal';
+            if (splitTypeSelect) {
+                splitTypeSelect.value = splitType;
+            }
+            
+            // Add real-time validation listeners
+            if (amountInput) {
+                amountInput.addEventListener('input', function() {
+                    validateExpenseAmount(this);
+                });
+            }
+            
+            if (descriptionInput) {
+                descriptionInput.addEventListener('input', function() {
+                    const helpText = document.getElementById('editExpenseDescriptionHelp');
+                    if (helpText) {
+                        const remaining = 200 - this.value.length;
+                        helpText.textContent = `${remaining} characters remaining`;
+                        if (remaining < 20) {
+                            helpText.style.color = 'var(--warning-color)';
+                        } else if (remaining < 0) {
+                            helpText.style.color = 'var(--danger-color)';
+                        } else {
+                            helpText.style.color = 'var(--text-secondary)';
+                        }
+                    }
+                });
+            }
 
             // Get only participants (names), not member IDs
             const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
@@ -1891,8 +2243,104 @@
                     ${participant}
                 </div>`
             ).join('');
+            
+            // Handle split type change
+            handleEditSplitTypeChange();
+            
+            // If custom split, populate custom amounts
+            if (splitType === 'custom' && expense.customAmounts) {
+                setTimeout(() => {
+                    Object.entries(expense.customAmounts).forEach(([member, amount]) => {
+                        const inputId = `editCustomAmount-${member.replace(/\s+/g, '-')}`;
+                        const input = document.getElementById(inputId);
+                        if (input) {
+                            input.value = amount.toFixed(2);
+                        }
+                    });
+                    updateEditCustomAmountsTotal();
+                }, 100);
+            }
 
             document.getElementById('editExpenseModal').style.display = 'block';
+        }
+        
+        // Handle edit split type change
+        function handleEditSplitTypeChange() {
+            const splitType = document.getElementById('editExpenseSplitType')?.value;
+            const customContainer = document.getElementById('editCustomAmountsContainer');
+            const amountInput = document.getElementById('editExpenseAmount');
+            
+            if (splitType === 'custom') {
+                if (customContainer) customContainer.style.display = 'block';
+                updateEditCustomAmountsList();
+                // Listen to amount changes
+                if (amountInput) {
+                    amountInput.addEventListener('input', updateEditCustomAmountsList);
+                }
+            } else {
+                if (customContainer) customContainer.style.display = 'none';
+                if (amountInput) {
+                    amountInput.removeEventListener('input', updateEditCustomAmountsList);
+                }
+            }
+        }
+        
+        // Update edit custom amounts list
+        function updateEditCustomAmountsList() {
+            const selectedBoxes = document.querySelectorAll('#editExpenseSplitGrid .selectable-box.selected');
+            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+            const amountInput = document.getElementById('editExpenseAmount');
+            const totalAmount = parseFloat(amountInput?.value || 0);
+            const customList = document.getElementById('editCustomAmountsList');
+            
+            if (!customList) return;
+            
+            // Calculate equal split as default
+            const equalAmount = selectedMembers.length > 0 ? totalAmount / selectedMembers.length : 0;
+            
+            customList.innerHTML = selectedMembers.map(member => {
+                const inputId = `editCustomAmount-${member.replace(/\s+/g, '-')}`;
+                return `
+                    <div class="custom-amount-item">
+                        <label for="${inputId}">${member}</label>
+                        <input 
+                            type="number" 
+                            id="${inputId}" 
+                            class="custom-amount-input" 
+                            data-member="${member}"
+                            value="${equalAmount.toFixed(2)}" 
+                            step="0.01" 
+                            min="0"
+                            max="10000000"
+                            oninput="validateCustomAmount(this); updateEditCustomAmountsTotal()"
+                        >
+                    </div>
+                `;
+            }).join('');
+            
+            updateEditCustomAmountsTotal();
+        }
+        
+        // Update edit custom amounts total
+        function updateEditCustomAmountsTotal() {
+            const customInputs = document.querySelectorAll('#editCustomAmountsList .custom-amount-input');
+            let total = 0;
+            customInputs.forEach(input => {
+                total += parseFloat(input.value || 0);
+            });
+            
+            const totalDisplay = document.getElementById('editCustomAmountsTotal');
+            if (totalDisplay) {
+                totalDisplay.textContent = `Total: ${formatCurrency(total)}`;
+                const amountInput = document.getElementById('editExpenseAmount');
+                const expectedTotal = parseFloat(amountInput?.value || 0);
+                
+                if (Math.abs(total - expectedTotal) > 0.01) {
+                    totalDisplay.style.color = 'var(--danger-color)';
+                } else {
+                    totalDisplay.style.color = 'var(--success-color)';
+                }
+            }
         }
 
         function closeEditExpenseModal() {
@@ -1919,12 +2367,82 @@
             const description = document.getElementById('editExpenseDescription')?.value.trim();
             const amount = document.getElementById('editExpenseAmount')?.value;
             const paidBy = document.getElementById('editExpensePaidBy')?.value;
+            const splitType = document.getElementById('editExpenseSplitType')?.value || 'equal';
             const selectedBoxes = document.querySelectorAll('#editExpenseSplitGrid .selectable-box.selected');
             const splitBetween = Array.from(selectedBoxes).map(box => box.dataset.member);
 
+            // Validation
             if (!description || !amount || !paidBy || splitBetween.length === 0) {
                 showNotification('Please fill all fields', 'error');
                 return;
+            }
+            
+            // Validate description length
+            if (description.length > 200) {
+                showNotification('Description cannot exceed 200 characters', 'error');
+                return;
+            }
+            
+            // Validate amount
+            const amountValue = parseFloat(amount);
+            if (isNaN(amountValue) || amountValue <= 0) {
+                showNotification('Amount must be greater than ₹0.00', 'error');
+                return;
+            }
+            
+            if (amountValue > 10000000) {
+                showNotification('Amount cannot exceed ₹10,000,000', 'error');
+                return;
+            }
+            
+            // Validate amount has at most 2 decimal places
+            if (amountValue % 0.01 !== 0 && amountValue % 0.01 > 0.001) {
+                showNotification('Amount can have at most 2 decimal places', 'error');
+                return;
+            }
+
+            // Handle custom amounts
+            let customAmounts = {};
+            let perPersonAmount = parseFloat(amount) / splitBetween.length;
+            
+            if (splitType === 'custom') {
+                const customInputs = document.querySelectorAll('#editCustomAmountsList .custom-amount-input');
+                let total = 0;
+                let hasInvalidAmount = false;
+                
+                customInputs.forEach(input => {
+                    const member = input.dataset.member;
+                    const value = parseFloat(input.value || 0);
+                    
+                    // Validate individual custom amounts
+                    if (isNaN(value) || value < 0) {
+                        showNotification(`Invalid amount for ${member}. Amount must be 0 or greater.`, 'error');
+                        hasInvalidAmount = true;
+                        return;
+                    }
+                    
+                    if (value > 10000000) {
+                        showNotification(`Amount for ${member} cannot exceed ₹10,000,000`, 'error');
+                        hasInvalidAmount = true;
+                        return;
+                    }
+                    
+                    customAmounts[member] = value;
+                    total += value;
+                });
+                
+                if (hasInvalidAmount) {
+                    return;
+                }
+                
+                // Validate total matches expense amount
+                const expectedTotal = parseFloat(amount);
+                if (Math.abs(total - expectedTotal) > 0.01) {
+                    showNotification(`Custom amounts total (${formatCurrency(total)}) must equal expense amount (${formatCurrency(expectedTotal)})`, 'error');
+                    return;
+                }
+                
+                perPersonAmount = total / splitBetween.length;
             }
 
             const expenseIndex = currentGroup.expenses.findIndex(e => e.id === editingExpenseId);
@@ -1942,7 +2460,9 @@
                     amount: newAmount,
                     paidBy: paidBy,
                     splitBetween: splitBetween,
-                    perPersonAmount: newAmount / splitBetween.length
+                    perPersonAmount: perPersonAmount,
+                    splitType: splitType,
+                    customAmounts: splitType === 'custom' ? customAmounts : undefined
                 };
 
                 // Update total
@@ -2634,6 +3154,17 @@ console.log('Use window.forceAppUpdate() to force update');
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('selectable-box')) {
                 e.target.classList.toggle('selected');
+                
+                // Update custom amounts list if split type is custom
+                const splitType = document.getElementById('expenseSplitType')?.value;
+                if (splitType === 'custom' && e.target.closest('#expenseSplitGrid')) {
+                    updateCustomAmountsList();
+                }
+                
+                const editSplitType = document.getElementById('editExpenseSplitType')?.value;
+                if (editSplitType === 'custom' && e.target.closest('#editExpenseSplitGrid')) {
+                    updateEditCustomAmountsList();
+                }
             }
         });
 

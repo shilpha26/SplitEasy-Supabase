@@ -10,10 +10,16 @@ const getBasePath = () => {
   // If path contains more than just '/', extract base path
   // e.g., '/SplitEasy-Supabase/sw.js' -> '/SplitEasy-Supabase'
   const parts = path.split('/').filter(p => p);
-  if (parts.length > 1) {
+  
+  // Only add base path if we're actually in a subdirectory (not just '/sw.js')
+  // This handles GitHub Pages but avoids issues when running locally
+  if (parts.length > 1 && parts[parts.length - 1] === 'sw.js') {
     // Remove 'sw.js' if present, keep the base path
     const baseParts = parts.slice(0, -1);
-    return '/' + baseParts.join('/');
+    // Only return base path if it's not empty (i.e., we're in a subdirectory)
+    if (baseParts.length > 0) {
+      return '/' + baseParts.join('/');
+    }
   }
   return '';
 };

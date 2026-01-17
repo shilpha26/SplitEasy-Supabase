@@ -631,6 +631,18 @@ header .container .user-info {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+.form-group input.invalid,
+.form-group input:invalid:not(:placeholder-shown) {
+    border-color: var(--danger-color);
+    background-color: rgba(239, 68, 68, 0.05);
+}
+
+.form-group input.invalid:focus,
+.form-group input:invalid:not(:placeholder-shown):focus {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
 .form-help {
     font-size: 0.85rem;
     color: #6c757d;
@@ -2916,5 +2928,92 @@ textarea:focus,
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+/* ========================================
+   UNEQUAL SPLITS - CUSTOM AMOUNTS
+   ======================================== */
+
+.custom-amounts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.custom-amounts-total {
+    font-weight: 700;
+    color: var(--success-color);
+}
+
+.custom-amounts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.custom-amount-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--background);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.custom-amount-item label {
+    flex: 0 0 120px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.custom-amount-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--surface);
+    color: var(--text-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.custom-amount-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.custom-amount-input.invalid,
+.custom-amount-input:invalid:not(:placeholder-shown) {
+    border-color: var(--danger-color);
+    background-color: rgba(239, 68, 68, 0.05);
+}
+
+.custom-amount-input.invalid:focus,
+.custom-amount-input:invalid:not(:placeholder-shown):focus {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 768px) {
+    .custom-amount-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .custom-amount-item label {
+        flex: none;
+    }
+    
+    .custom-amount-input {
+        width: 100%;
     }
 }
