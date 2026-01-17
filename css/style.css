@@ -84,17 +84,15 @@ body {
 /* Header Styles */
 header {
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
     padding: 1.25rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .details-view-back {
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
     padding: 1rem 0;
     position: sticky;
     top: 0;
@@ -1226,6 +1224,11 @@ textarea:focus,
     outline-offset: 2px;
 }
 
+/* Remove focus outline from main app content (programmatic focus for screen readers) */
+#mainAppContent:focus {
+    outline: none;
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
     .selectable-box {
@@ -1254,12 +1257,11 @@ textarea:focus,
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 16px;
     padding: 0;
-    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.1), 0 2px 8px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
     cursor: pointer;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-                border-color 0.25s ease;
-    border: 1px solid rgba(229, 231, 235, 0.8);
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
     overflow: hidden;
     /* Performance optimization */
     will-change: transform;
@@ -1280,8 +1282,7 @@ textarea:focus,
 
 .group-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.14), 0 6px 16px -2px rgba(0, 0, 0, 0.1);
-    border-color: rgba(16, 185, 129, 0.25);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
 .group-card:hover::before {
@@ -1320,11 +1321,10 @@ textarea:focus,
     font-size: 1.25rem;
     font-weight: 300;
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
                 background 0.2s ease, 
                 border-color 0.2s ease, 
                 color 0.2s ease;
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
     line-height: 1;
     padding: 0;
     color: var(--text-secondary);
@@ -1341,7 +1341,7 @@ textarea:focus,
 
 .group-action-btn:hover {
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: none;
 }
 
 .group-action-btn.edit:hover {

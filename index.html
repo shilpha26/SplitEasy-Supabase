@@ -1134,9 +1134,15 @@
             if (userLoginModal) userLoginModal.style.display = 'none';
             if (mainApp) {
                 mainApp.style.display = 'block';
-                // Set focus to main content for screen readers
+                // Set focus to main content for screen readers (but blur immediately to avoid visual outline)
                 mainApp.setAttribute('tabindex', '-1');
                 mainApp.focus();
+                // Blur immediately to remove focus outline while keeping accessibility announcement
+                setTimeout(() => {
+                    if (mainApp === document.activeElement) {
+                        mainApp.blur();
+                    }
+                }, 0);
             }
         }
 
