@@ -1,5 +1,5 @@
 // Force cache update by incrementing version
-const CACHE_VERSION = 'spliteasy-v1738350000000'; // Fixed custom split edit and display
+const CACHE_VERSION = 'spliteasy-v1738351000000'; // Added custom split database support
 const CACHE_NAME = CACHE_VERSION;
 
 console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);

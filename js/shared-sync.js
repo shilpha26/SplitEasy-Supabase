@@ -56,7 +56,9 @@ let SCHEMA_MAPPING = {
         createdBy: 'created_by',
         createdAt: 'created_at',
         updatedAt: 'updated_at',
-        perPersonAmount: 'per_person_amount'
+        perPersonAmount: 'per_person_amount',
+        splitType: 'split_type',  // 'equal' or 'custom'
+        customAmounts: 'custom_amounts'  // JSONB object for custom split amounts
     }
 };
 
@@ -410,7 +412,9 @@ async function syncExpenseToDatabase(expense, groupId) {
             [expenseSchema.createdBy]: window.currentUser.id,
             [expenseSchema.createdAt]: expense.date || new Date().toISOString(),
             [expenseSchema.updatedAt]: new Date().toISOString(),
-            [expenseSchema.perPersonAmount]: expense.perPersonAmount || (parseFloat(expense.amount) / (expense.splitBetween?.length || 1))
+            [expenseSchema.perPersonAmount]: expense.perPersonAmount || (parseFloat(expense.amount) / (expense.splitBetween?.length || 1)),
+            [expenseSchema.splitType]: expense.splitType || 'equal',
+            [expenseSchema.customAmounts]: expense.customAmounts || null
         };
 
         console.log('Expense record structure:', expenseRecord);
@@ -657,7 +661,9 @@ async function fetchAllGroupsFromDatabase() {
                         paidBy: expense[expenseSchema.paidBy] || expense.paid_by || expense.paidby,
                         splitBetween: expense[expenseSchema.splitBetween] || expense.split_between || expense.splitbetween || [],
                         date: expense[expenseSchema.createdAt] || expense.created_at || expense.createdat,
-                        perPersonAmount: expense[expenseSchema.perPersonAmount] || expense.per_person_amount || expense.perpersonamount || 0
+                        perPersonAmount: expense[expenseSchema.perPersonAmount] || expense.per_person_amount || expense.perpersonamount || 0,
+                        splitType: expense[expenseSchema.splitType] || expense.split_type || 'equal',
+                        customAmounts: expense[expenseSchema.customAmounts] || expense.custom_amounts || null
                     })) : [],
                     totalExpenses: 0,
                     createdAt: group[groupSchema.createdAt] || group.created_at || group.createdat,
@@ -834,7 +840,9 @@ async function fetchGroupFromDatabase(groupId) {
                 paidBy: expense[expenseSchema.paidBy] || expense.paid_by || expense.paidby,
                 splitBetween: expense[expenseSchema.splitBetween] || expense.split_between || expense.splitbetween || [],
                 date: expense[expenseSchema.createdAt] || expense.created_at || expense.createdat,
-                perPersonAmount: expense[expenseSchema.perPersonAmount] || expense.per_person_amount || expense.perpersonamount || 0
+                perPersonAmount: expense[expenseSchema.perPersonAmount] || expense.per_person_amount || expense.perpersonamount || 0,
+                splitType: expense[expenseSchema.splitType] || expense.split_type || 'equal',
+                customAmounts: expense[expenseSchema.customAmounts] || expense.custom_amounts || null
             })) : [],
             totalExpenses: 0,
             createdAt: group[groupSchema.createdAt] || group.created_at || group.createdat,
