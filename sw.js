@@ -1,5 +1,5 @@
 // Force cache update by incrementing version
-const CACHE_VERSION = 'spliteasy-v1738353000000'; // Fixed custom split loading in group-detail
+const CACHE_VERSION = 'spliteasy-v2026020301'; // UI redesign with premium fintech design system
 const CACHE_NAME = CACHE_VERSION;
 
 console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);
@@ -118,8 +118,8 @@ self.addEventListener('fetch', event => {
 
   const url = event.request.url;
 
-  // NETWORK FIRST for HTML files - ensures latest content
-  if (url.includes('.html') || url.endsWith('/') || url.includes('?id=')) {
+  // NETWORK FIRST for HTML and CSS files - ensures latest content
+  if (url.includes('.html') || url.includes('.css') || url.endsWith('/') || url.includes('?id=')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
