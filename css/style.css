@@ -808,21 +808,29 @@ header .container {
 .expenses-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: 0;
     margin-bottom: var(--space-6);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
 }
 
-/* Main container */
+/* Main container - clean line style */
 .expense-item {
     position: relative;
-    background: var(--surface);
-    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
+    background: transparent;
+    padding: var(--space-4) var(--space-4);
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     gap: var(--space-4);
+}
+
+.expense-item:last-child {
+    border-bottom: none;
 }
 
 /* Left accent bar - appears on hover */
@@ -840,8 +848,7 @@ header .container {
 }
 
 .expense-item:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-200);
+    background: var(--gray-50);
 }
 
 .expense-item:hover::before {
@@ -974,6 +981,12 @@ header .container {
         align-items: flex-start;
         position: relative;
         flex-wrap: wrap;
+        background: transparent;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    
+    .expense-item:last-child {
+        border-bottom: none;
     }
     
     /* Stack everything vertically on mobile - full width */
@@ -1067,8 +1080,29 @@ header .container {
    11. SETTLEMENTS & BALANCES
    ============================================ */
 
+/* Responsive visibility utilities */
+.hide-on-mobile {
+    display: inline-flex;
+}
+
+.show-on-mobile-only {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+    
+    .show-on-mobile-only {
+        display: block !important;
+    }
+}
+
 .balances-section {
     margin-top: var(--space-8);
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-4);
 }
 
 .balances-header {
@@ -1597,6 +1631,37 @@ header .container {
     background: var(--gray-50);
     border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
 }
+
+/* Snapshot Preview Styles */
+.snapshot-preview {
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-subtle);
+}
+
+.snapshot-preview .snapshot-loading,
+.snapshot-preview .snapshot-error {
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+.snapshot-preview .snapshot-error {
+    color: var(--error-600);
+}
+
+.snapshot-preview .snapshot-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
 
 .modal-footer-with-delete {
     padding: var(--space-4) var(--space-6);
@@ -2290,11 +2355,6 @@ a:focus-visible {
     box-shadow: var(--shadow-sm);
 }
 
-.show-details-container {
-    margin-top: var(--space-6);
-    text-align: center;
-}
-
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -2307,12 +2367,6 @@ a:focus-visible {
     color: var(--text-primary);
     margin: 0;
     font-weight: var(--font-semibold);
-}
-
-.section-header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
 }
 
 /* Settlement Details */
@@ -2639,6 +2693,8 @@ a:focus-visible {
     .modal-footer .btn-secondary,
     .modal-footer .btn-success {
         width: 100%;
+        padding: 12px 16px;
+        font-size: 15px;
     }
     
     .modal-footer-with-delete {
@@ -2653,6 +2709,15 @@ a:focus-visible {
     
     .modal-footer-right {
         flex-direction: column-reverse;
+    }
+    
+    /* Share Modal - Mobile */
+    .snapshot-preview {
+        padding: var(--space-2);
+    }
+    
+    .snapshot-preview .snapshot-image {
+        max-height: 250px;
     }
     
     /* Selectable Grid */

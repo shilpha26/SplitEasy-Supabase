@@ -44,9 +44,8 @@
         <!-- Expenses Section -->
         <section class="expenses-section">
             <div class="section-header">
-                <div class="section-header-actions">
                 <button class="btn-success" onclick="showAddExpenseModal()">Add Expense</button>
-                </div>
+                <button class="btn-success hide-on-mobile" onclick="showDetailsView()">Show details</button>
             </div>
             <div id="expensesList" class="expenses-list">
                 <!-- Expenses will be loaded here -->
@@ -66,7 +65,7 @@
             <div id="balancesList" class="balances-list">
                 <!-- Settlements will be calculated and shown here -->
             </div>
-            <div class="show-details-container">
+            <div class="show-on-mobile-only" style="margin-top: 20px; text-align: center;">
                 <button class="btn-success" onclick="showDetailsView()">Show details</button>
             </div>
         </section>
@@ -244,7 +243,7 @@
 
     <!-- Share Group Modal -->
     <div id="shareModal" class="modal">
-        <div class="modal-content modal-small">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3>Share Group</h3>
                 <span class="close" onclick="closeShareModal()">&times;</span>
@@ -252,12 +251,25 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="shareLink">Share Link</label>
-                    <input type="text" id="shareLink" readonly>
-                    <button type="button" class="btn-success" onclick="copyShareLink()">Copy</button>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; width: 100%;">
+                        <input type="text" id="shareLink" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" readonly>
+                        <button type="button" class="btn-success" style="padding: 12px 20px; white-space: nowrap;" onclick="copyShareLink()">Copy</button>
+                    </div>
+                </div>
+                
+                <!-- Snapshot Preview -->
+                <div class="form-group" id="snapshotPreviewSection">
+                    <label>Settlements Snapshot</label>
+                    <div id="snapshotPreview" class="snapshot-preview">
+                        <p class="snapshot-loading">Generating preview...</p>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeShareModal()">Close</button>
+                <button type="button" class="btn-success" onclick="shareWithSnapshot()" id="shareWithSnapshotBtn">
+                    Share with Snapshot
+                </button>
             </div>
         </div>
     </div>
@@ -314,6 +326,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="js/shared-utils.js"></script>
     <script>
         // ========================================
@@ -2577,13 +2590,313 @@
         // ========================================
         // GROUP FUNCTIONS
         // ========================================
-        function shareGroup() {
+        let snapshotCanvas = null;
+        let snapshotBlob = null;
+
+        // Get settlements data for snapshot (mirrors updateBalancesUI logic)
+        function getSettlementsData() {
+            if (!currentGroup || !currentGroup.expenses || currentGroup.expenses.length === 0) {
+                return [];
+            }
+
+            // Get only participants (names), not member IDs - same as updateBalancesUI
+            const participants = Array.isArray(currentGroup.participants) ? currentGroup.participants : [];
+            
+            if (participants.length === 0) return [];
+
+            // Initialize balances
+            const balances = {};
+            participants.forEach(p => balances[p] = 0);
+
+            // Calculate balances from expenses - same logic as updateBalancesUI
+            currentGroup.expenses.forEach(expense => {
+                const amount = parseFloat(expense.amount);
+                // Filter splitBetween to only include participants (names, not IDs)
+                const splitBetween = (expense.splitBetween || []).filter(name => 
+                    participants.includes(name) && 
+                    !name.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !name.match(/^user\d+$/i) &&
+                    !name.match(/^[a-zA-Z]+\d+$/)
+                );
+                
+                if (splitBetween.length === 0) return;
+
+                // Handle unequal splits
+                let perPerson = amount / splitBetween.length;
+                if (expense.splitType === 'custom' && expense.customAmounts) {
+                    perPerson = 0;
+                }
+
+                // Credit the payer (only if they're a participant)
+                if (participants.includes(expense.paidBy) && 
+                    !expense.paidBy.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+                    !expense.paidBy.match(/^user\d+$/i) &&
+                    !expense.paidBy.match(/^[a-zA-Z]+\d+$/)) {
+                    if (balances[expense.paidBy] !== undefined) {
+                        balances[expense.paidBy] += amount;
+                    }
+                }
+
+                // Debit each person's share
+                splitBetween.forEach(participant => {
+                    if (balances[participant] !== undefined) {
+                        if (expense.splitType === 'custom' && expense.customAmounts && expense.customAmounts[participant] !== undefined) {
+                            balances[participant] -= expense.customAmounts[participant];
+                        } else {
+                            balances[participant] -= perPerson;
+                        }
+                    }
+                });
+            });
+
+            // Get creditors and debtors
+            const creditors = [];
+            const debtors = [];
+
+            Object.entries(balances).forEach(([member, amount]) => {
+                if (Math.abs(amount) > 0.01) {
+                    if (amount > 0) {
+                        creditors.push({ name: member, amount: amount });
+                    } else {
+                        debtors.push({ name: member, amount: Math.abs(amount) });
+                    }
+                }
+            });
+
+            creditors.sort((a, b) => b.amount - a.amount);
+            debtors.sort((a, b) => b.amount - a.amount);
+
+            // Calculate optimal settlements
+            const settlements = [];
+            let i = 0, j = 0;
+
+            while (i < creditors.length && j < debtors.length) {
+                const creditor = creditors[i];
+                const debtor = debtors[j];
+                const settlementAmount = Math.min(creditor.amount, debtor.amount);
+
+                settlements.push({
+                    from: debtor.name,
+                    to: creditor.name,
+                    amount: settlementAmount
+                });
+
+                creditor.amount -= settlementAmount;
+                debtor.amount -= settlementAmount;
+
+                if (creditor.amount < 0.01) i++;
+                if (debtor.amount < 0.01) j++;
+            }
+
+            return settlements;
+        }
+
+        async function shareGroup() {
             const modal = document.getElementById('shareModal');
             const shareLink = document.getElementById('shareLink');
             const url = window.location.href;
 
             if (shareLink) shareLink.value = url;
             if (modal) modal.style.display = 'block';
+            
+            // Generate snapshot preview
+            await generateSnapshotPreview();
+        }
+
+        async function generateSnapshotPreview() {
+            const previewContainer = document.getElementById('snapshotPreview');
+            
+            if (!previewContainer) return;
+            
+            previewContainer.innerHTML = '<p class="snapshot-loading">Generating preview...</p>';
+            
+            try {
+                // Get settlements data
+                const settlements = getSettlementsData();
+                const groupName = currentGroup?.name || 'Group';
+                const totalAmount = settlements.reduce((sum, s) => sum + s.amount, 0);
+                
+                // Build a beautiful custom snapshot element
+                const snapshotEl = document.createElement('div');
+                snapshotEl.style.cssText = `
+                    width: 380px;
+                    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                    border-radius: 16px;
+                    padding: 24px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+                `;
+                
+                // Header with gradient
+                const header = document.createElement('div');
+                header.style.cssText = `
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    margin: -24px -24px 20px -24px;
+                    padding: 20px 24px;
+                    border-radius: 16px 16px 0 0;
+                `;
+                header.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="color: #ffffff; font-size: 20px; font-weight: 700;">${escapeHtml(groupName)}</div>
+                        <div style="color: rgba(255,255,255,0.9); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">SplitEasy</div>
+                    </div>
+                `;
+                snapshotEl.appendChild(header);
+                
+                // Settlements title
+                const title = document.createElement('div');
+                title.style.cssText = 'font-size: 14px; font-weight: 600; color: #64748b; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;';
+                title.textContent = 'Settlements Needed';
+                snapshotEl.appendChild(title);
+                
+                // Settlements list
+                if (settlements.length === 0) {
+                    const noSettlements = document.createElement('div');
+                    noSettlements.style.cssText = 'text-align: center; padding: 20px; color: #10b981; font-size: 16px;';
+                    noSettlements.innerHTML = '<div style="font-size: 32px; margin-bottom: 8px;">✓</div>All settled up!';
+                    snapshotEl.appendChild(noSettlements);
+                } else {
+                    const list = document.createElement('div');
+                    list.style.cssText = 'display: flex; flex-direction: column; background: #ffffff; border-radius: 8px; overflow: hidden;';
+                    
+                    settlements.forEach(s => {
+                        const item = document.createElement('div');
+                        item.style.cssText = `
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            padding: 14px 16px;
+                            background: #ffffff;
+                            border-left: 4px solid #e53e3e;
+                            border-bottom: 1px solid #f1f5f9;
+                        `;
+                        item.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                                <span style="color: #e53e3e; font-weight: 600; font-size: 15px;">${escapeHtml(s.from)}</span>
+                                <span style="color: #9ca3af; font-size: 14px; opacity: 0.6;">→</span>
+                                <span style="color: #16a34a; font-weight: 600; font-size: 15px;">${escapeHtml(s.to)}</span>
+                            </div>
+                            <div style="font-weight: 700; color: #1e293b; font-size: 16px; font-feature-settings: 'tnum'; text-align: right; min-width: 90px;">${formatCurrency(s.amount)}</div>
+                        `;
+                        list.appendChild(item);
+                    });
+                    snapshotEl.appendChild(list);
+                    
+                    // Total
+                    const totalDiv = document.createElement('div');
+                    totalDiv.style.cssText = `
+                        margin-top: 16px;
+                        padding-top: 16px;
+                        border-top: 2px dashed #e2e8f0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    totalDiv.innerHTML = `
+                        <span style="font-size: 16px; color: #64748b; font-weight: 600; flex: 1;">Total to settle</span>
+                        <span style="font-size: 16px; font-weight: 700; color: #10b981; text-align: right; min-width: 90px;">${formatCurrency(totalAmount)}</span>
+                    `;
+                    snapshotEl.appendChild(totalDiv);
+                }
+                
+                // Temporarily add to DOM (hidden)
+                snapshotEl.style.position = 'absolute';
+                snapshotEl.style.left = '-9999px';
+                snapshotEl.style.top = '0';
+                document.body.appendChild(snapshotEl);
+                
+                // Generate canvas
+                snapshotCanvas = await html2canvas(snapshotEl, {
+                    backgroundColor: null,
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                });
+                
+                // Remove element
+                document.body.removeChild(snapshotEl);
+                
+                // Convert to blob for sharing
+                snapshotCanvas.toBlob(blob => {
+                    snapshotBlob = blob;
+                }, 'image/png');
+                
+                // Show preview (smaller version)
+                const previewImg = document.createElement('img');
+                previewImg.src = snapshotCanvas.toDataURL('image/png');
+                previewImg.className = 'snapshot-image';
+                previewImg.alt = 'Settlements snapshot preview';
+                
+                previewContainer.innerHTML = '';
+                previewContainer.appendChild(previewImg);
+                
+            } catch (error) {
+                console.error('Error generating snapshot:', error);
+                previewContainer.innerHTML = '<p class="snapshot-error">Could not generate preview</p>';
+            }
+        }
+
+        async function shareWithSnapshot() {
+            const url = window.location.href;
+            const groupName = currentGroup?.name || 'Group';
+            const shareText = `Check out the settlements for "${groupName}":\n${url}`;
+            
+            // Check if snapshot is ready
+            if (!snapshotCanvas) {
+                showNotification('Snapshot not ready. Please wait and try again.', 'error');
+                // Try to regenerate
+                await generateSnapshotPreview();
+                return;
+            }
+            
+            // Detect if mobile device (for native share)
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Use native share only on mobile devices
+            if (isMobile && navigator.canShare && snapshotBlob) {
+                const file = new File([snapshotBlob], `${groupName}-settlements.png`, { type: 'image/png' });
+                const shareData = {
+                    title: `${groupName} - Settlements`,
+                    text: shareText,
+                    files: [file]
+                };
+                
+                try {
+                    if (navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        showNotification('Shared successfully!', 'success');
+                        closeShareModal();
+                        return;
+                    }
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error('Share failed:', error);
+                    }
+                }
+            }
+            
+            // Desktop: Download image and copy link
+            try {
+                // Create download link
+                const dataUrl = snapshotCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `${groupName.replace(/[^a-zA-Z0-9]/g, '_')}-settlements.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Copy link to clipboard
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showNotification('Image downloaded & link copied to clipboard!', 'success');
+                } catch (clipboardError) {
+                    showNotification('Image downloaded! Copy the link manually.', 'success');
+                }
+            } catch (downloadError) {
+                console.error('Download failed:', downloadError);
+                showNotification('Could not download image. Try right-clicking the preview to save.', 'error');
+            }
         }
 
         function copyShareLink() {
@@ -2598,6 +2911,8 @@
         function closeShareModal() {
             const modal = document.getElementById('shareModal');
             if (modal) modal.style.display = 'none';
+            snapshotCanvas = null;
+            snapshotBlob = null;
         }
 
         // ========================================
