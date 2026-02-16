@@ -194,6 +194,8 @@ window.fetchUserByEmail = async function(email) {
         return null;
     }
 
+    console.log('🔍 Fetching user by email:', email);
+
     try {
         const { data, error } = await window.supabaseClient
             .from('users')
@@ -204,16 +206,69 @@ window.fetchUserByEmail = async function(email) {
         if (error) {
             // User not found or table doesn't exist
             if (error.code === 'PGRST116' || error.message?.includes('not found') || error.message?.includes('404')) {
+                console.log('User not found in database (new user)');
                 return null;
             }
             console.warn('User fetch error:', error);
             return null;
         }
 
+        console.log('✅ User found in database:', data);
         return data;
     } catch (error) {
         console.warn('User fetch failed:', error);
         return null;
+    }
+};
+
+// Sync user to database (upsert - create or update)
+window.syncUserToDatabase = async function(user) {
+    if (!window.supabaseClient || isOffline) {
+        console.log('Offline or no client - cannot sync user');
+        return false;
+    }
+
+    if (!user || !user.id) {
+        console.warn('Cannot sync user - no user data provided');
+        return false;
+    }
+
+    console.log('🔄 Syncing user to database:', user.id, user.name);
+
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('users')
+            .upsert({
+                id: user.id.toLowerCase(),
+                name: user.name,
+                email: user.email || user.id.toLowerCase(),
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'id'
+            })
+            .select()
+            .single();
+
+        if (error) {
+            // If users table doesn't exist, that's okay
+            if (error.message?.includes('not found') || error.message?.includes('404') || error.code === 'PGRST204' || error.code === '42P01') {
+                console.log('⚠️ Users table not found - user will be stored locally only');
+                return null;
+            }
+            console.error('User sync error:', error);
+            throw error;
+        }
+
+        console.log('✅ User synced to database:', data);
+        return data;
+    } catch (error) {
+        // If table doesn't exist, log but don't fail
+        if (error.message?.includes('not found') || error.message?.includes('404') || error.code === '42P01') {
+            console.log('⚠️ Users table not found - user will be stored locally only');
+            return null;
+        }
+        console.error('User sync failed:', error);
+        throw error;
     }
 };
 

@@ -555,10 +555,13 @@
             }
             
             try {
+                console.log('🔍 Checking if user exists for email:', email);
                 const existingUser = await window.fetchUserByEmail(email);
+                console.log('📧 Fetch result:', existingUser);
                 
                 if (existingUser && existingUser.name) {
                     // User found - populate name and make it read-only
+                    console.log('✅ Existing user found, populating name:', existingUser.name);
                     nameInput.value = existingUser.name;
                     nameInput.readOnly = true;
                     nameInput.style.backgroundColor = '#f0f9ff';
@@ -569,6 +572,7 @@
                     }
                 } else {
                     // New user - allow name entry
+                    console.log('ℹ️ New user - allowing name entry');
                     nameInput.readOnly = false;
                     nameInput.style.backgroundColor = '';
                     
@@ -578,7 +582,7 @@
                     }
                 }
             } catch (error) {
-                Logger?.warn('Could not fetch user by email:', error);
+                console.error('❌ Error fetching user by email:', error);
                 // Allow manual entry on error
                 nameInput.readOnly = false;
                 nameInput.style.backgroundColor = '';
