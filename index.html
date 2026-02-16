@@ -661,14 +661,21 @@
                 }
 
                 // Update in database if available
+                console.log('🔄 Attempting to sync name change to database...');
+                console.log('Current user data:', window.currentUser);
+                
                 if (window.supabaseClient && typeof window.syncUserToDatabase === 'function') {
                     try {
-                        await window.syncUserToDatabase(window.currentUser);
+                        const result = await window.syncUserToDatabase(window.currentUser);
+                        console.log('✅ Name sync result:', result);
                         Logger?.info('User name updated in database');
                     } catch (dbError) {
+                        console.error('❌ Failed to sync name to database:', dbError);
                         Logger?.warn('Failed to update user name in database:', dbError);
                         // Continue anyway - local update succeeded
                     }
+                } else {
+                    console.warn('⚠️ Cannot sync - supabaseClient:', !!window.supabaseClient, 'syncUserToDatabase:', typeof window.syncUserToDatabase);
                 }
 
                 // Update UI
