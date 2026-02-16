@@ -199,7 +199,7 @@ window.fetchUserByEmail = async function(email) {
     try {
         const { data, error } = await window.supabaseClient
             .from('users')
-            .select('id, name, email')
+            .select('id, name')
             .eq('id', email.toLowerCase())
             .single();
 
@@ -241,7 +241,6 @@ window.syncUserToDatabase = async function(user) {
             .upsert({
                 id: user.id.toLowerCase(),
                 name: user.name,
-                email: user.email || user.id.toLowerCase(),
                 updated_at: new Date().toISOString()
             }, {
                 onConflict: 'id'
