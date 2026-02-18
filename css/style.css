@@ -2093,18 +2093,6 @@ header .container {
     image-rendering: auto;
 }
 
-/* Update app button – high visibility so old users can get latest version */
-.header-update-app {
-    min-height: 44px;
-    min-width: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.header-update-app:hover {
-    text-decoration: underline;
-}
-
 /* Skeleton loading */
 .skeleton {
     background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);

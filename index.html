@@ -4,11 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script>
-        // GitHub Pages: redirect to Vercel so the app works (Vercel is the active deployment)
-        if (window.location.hostname === 'shilpha26.github.io' && window.location.pathname.indexOf('SplitXpense') !== -1) {
-            var vercel = 'https://splitxpense.vercel.app/' + (window.location.search || '');
-            window.location.replace(vercel);
+        // Redirect all non-canonical URLs to splitxpense.vercel.app (GitHub Pages, spliteasy-skyv, other Vercel)
+        var h = window.location.hostname;
+        var base = 'https://splitxpense.vercel.app';
+        var search = window.location.search || '';
+        if (h === 'shilpha26.github.io' && window.location.pathname.indexOf('SplitXpense') !== -1) {
+            window.location.replace(base + '/' + search);
+        } else if (h === 'spliteasy-skyv.vercel.app' || (h.endsWith('.vercel.app') && h !== 'splitxpense.vercel.app')) {
+            var path = window.location.pathname || '/';
+            window.location.replace(base + path + search);
         }
+        // Auto-clear cache when someone opens the app (once per session, then reload for latest)
+        (function() {
+            if (sessionStorage.getItem('splitxpense_cache_cleared')) return;
+            if (!('caches' in window) && !('serviceWorker' in navigator)) return;
+            sessionStorage.setItem('splitxpense_cache_cleared', '1');
+            var unregister = 'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(regs) { return Promise.all(regs.map(function(r) { return r.unregister(); })); }) : Promise.resolve();
+            var clearCaches = 'caches' in window ? caches.keys().then(function(names) { return Promise.all(names.map(function(n) { return caches.delete(n); })); }) : Promise.resolve();
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+            Promise.all([unregister, clearCaches]).then(function() { window.location.reload(true); }).catch(function() { window.location.reload(true); });
+        })();
     </script>
     <title>SplitXpense - Share expenses, split the cost</title>
     <!-- Google Fonts - Inter -->
@@ -56,8 +71,7 @@
                     <h1>SplitXpense</h1>
                     <p>Share expenses, split the cost</p>
                 </div>
-                <div class="user-info" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                    <button type="button" class="btn-link header-update-app" data-action="clearCacheAndUpdate" title="Get latest app version (clear cache & refresh)" aria-label="Clear cache and update app" style="font-size: 0.8rem; color: var(--primary-600, #16a34a); font-weight: 600;">↻ Update app</button>
+                <div class="user-info">
                     <span id="currentUserName">Loading...</span>
                     <button class="btn-link" data-action="showEditUserNameModal" title="Edit Name" type="button" aria-label="Edit user name">✎</button>
                 </div>
