@@ -1853,16 +1853,16 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
                 return;
             }
 
-            // Get selected members from grid
-            const selectedBoxes = document.querySelectorAll('#editMemberSelectionGrid .selectable-box.selected');
-            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+            // Get ALL members from grid (every name shown is a participant; don't rely on .selected)
+            const allBoxes = document.querySelectorAll('#editMemberSelectionGrid .selectable-box');
+            const gridMembers = Array.from(allBoxes).map(box => box.dataset.member).filter(Boolean);
 
-            // Get dynamic members
+            // Get dynamic members (if any were added to the dynamic container)
             const dynamicMembers = Array.from(document.querySelectorAll('#editDynamicMembers .dynamic-item-name')).map(el => el.textContent);
 
-            const allMembers = [...selectedMembers, ...dynamicMembers];
+            const allMembers = [...gridMembers, ...dynamicMembers];
 
-            Logger?.debug('Selected participants:', selectedMembers);
+            Logger?.debug('Grid participants:', gridMembers);
             Logger?.debug('Dynamic participants:', dynamicMembers);
             Logger?.debug('All participants:', allMembers);
 

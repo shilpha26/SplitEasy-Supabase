@@ -3227,12 +3227,13 @@
         // FIXED: Save group changes with database synchronization
         async function saveGroupChanges() {
             const groupName = document.getElementById('editGroupName')?.value.trim();
-            const selectedBoxes = document.querySelectorAll('#editGroupMembersGrid .selectable-box.selected');
-            const selectedMembers = Array.from(selectedBoxes).map(box => box.dataset.member);
+            // Get ALL members from grid (every name shown is a participant; don't rely on .selected)
+            const allBoxes = document.querySelectorAll('#editGroupMembersGrid .selectable-box');
+            const gridMembers = Array.from(allBoxes).map(box => box.dataset.member).filter(Boolean);
 
             const dynamicMembers = Array.from(document.querySelectorAll('#editGroupDynamicMembers .dynamic-item-name')).map(el => el.textContent);
 
-            const allPeople = [...selectedMembers, ...dynamicMembers];
+            const allPeople = [...gridMembers, ...dynamicMembers];
 
             if (!groupName || allPeople.length < 2) {
                 showNotification('Please provide group name and at least two members', 'error');
