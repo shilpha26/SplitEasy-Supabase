@@ -1,6 +1,4 @@
 // shared-sync-database-fixed.js - Schema-Aware Sync System
-console.log('Loading database schema-aware SplitXpense sync system...');
-
 // ========================================
 // GLOBAL VARIABLES & CONFIGURATION
 // ========================================

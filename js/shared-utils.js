@@ -1,5 +1,4 @@
 // shared-utils.js - Optimized utilities for SplitXpense
-console.log('Loading SplitXpense shared utilities...');
 
 // ========================================
 // PERFORMANCE OPTIMIZATIONS
@@ -26,18 +25,6 @@ function debounce(func, wait) {
         };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-    };
-}
-
-// Throttle function for frequent events
-function throttle(func, limit) {
-    let inThrottle;
-    return function(...args) {
-        if (!inThrottle) {
-            func.apply(this, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
     };
 }
 
@@ -265,16 +252,6 @@ function safeGetElement(id) {
     return getCachedElement(id);
 }
 
-// Safe event listener addition
-function safeAddEventListener(elementId, event, handler) {
-    const element = safeGetElement(elementId);
-    if (element && typeof handler === 'function') {
-        element.addEventListener(event, handler);
-        return true;
-    }
-    return false;
-}
-
 // Safe update element text
 function safeUpdateElement(id, content) {
     const element = safeGetElement(id);
@@ -304,7 +281,6 @@ window.invalidateGroupsCache = invalidateGroupsCache;
 window.safeGetElement = safeGetElement;
 window.safeUpdateElement = safeUpdateElement;
 window.debounce = debounce;
-window.throttle = throttle;
 window.batchLocalStorageOperation = batchLocalStorageOperation;
 
 // ========================================

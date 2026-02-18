@@ -1,13 +1,12 @@
 /* ============================================
-   SPLITEASY - PREMIUM FINTECH DESIGN SYSTEM
+   SplitXpense - Premium fintech design system
    A calm, trustworthy expense splitting experience
    ============================================ */
 
 /* ============================================
    1. DESIGN TOKENS & CSS VARIABLES
    ============================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Font loaded via <link> in HTML to avoid duplicate request */
 
 :root {
     /* === COLOR PALETTE === */

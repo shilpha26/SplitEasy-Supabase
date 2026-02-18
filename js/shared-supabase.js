@@ -1,6 +1,4 @@
 // shared-supabase-enhanced.js - Enhanced Supabase Management
-console.log('Loading SplitXpense Supabase integration...');
-
 // ========================================
 // SUPABASE CONFIGURATION
 // ========================================
