@@ -36,6 +36,7 @@
                 </div>
             </div>
             <div class="group-actions">
+                <button type="button" class="btn-link header-update-app" onclick="clearCacheAndUpdate()" title="Get latest app version (clear cache & refresh)" aria-label="Clear cache and update app" style="font-size: 0.75rem; color: var(--primary-600, #16a34a); font-weight: 600; padding: 0.25rem 0.5rem;">↻ Update app</button>
                 <button class="btn-secondary" id="shareBtn" onclick="shareGroup()">Share</button>
                 <button class="btn-success" id="editBtn" onclick="handleEditGroup()">Edit</button>
             </div>
@@ -3164,6 +3165,9 @@
 
             if (!memberName) return;
 
+            const grid = document.getElementById('editGroupMembersGrid');
+            if (!grid) return;
+
             const existingMembers = Array.from(document.querySelectorAll('#editGroupMembersGrid .selectable-box')).map(box => box.dataset.member);
             const dynamicMembers = Array.from(document.querySelectorAll('#editGroupDynamicMembers .dynamic-item-name')).map(el => el.textContent);
 
@@ -3172,22 +3176,18 @@
                 return;
             }
 
-            const dynamicContainer = document.getElementById('editGroupDynamicMembers');
-            const itemId = `editgroupmember${dynamicMemberCounter++}`;
-            const memberItem = document.createElement('div');
-            memberItem.className = 'dynamic-item';
-            memberItem.id = itemId;
-            memberItem.innerHTML = `
-                <div class="dynamic-item-content">
-                    <span class="dynamic-item-name">${memberName}</span>
-                </div>
-                <div class="dynamic-item-actions">
-                    <button class="icon-btn edit" onclick="editGroupMember('${itemId}')" title="Edit">✎</button>
-                    <button class="icon-btn delete" onclick="removeGroupMember('${itemId}')" title="Remove">×</button>
-                </div>
-            `;
+            // Remove "No participants yet" message if present
+            const emptyMsg = grid.querySelector('p');
+            if (emptyMsg) {
+                emptyMsg.remove();
+            }
 
-            dynamicContainer.appendChild(memberItem);
+            // Add new member as a selectable box in the grid so it shows up with the others
+            const box = document.createElement('div');
+            box.className = 'selectable-box selected';
+            box.setAttribute('data-member', memberName);
+            box.textContent = memberName;
+            grid.appendChild(box);
             input.value = '';
             showNotification('Member added successfully', 'success');
         }
@@ -3488,42 +3488,43 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Helper function to manually clear cache
-window.clearAppCache = function() {
-  if ('serviceWorker' in navigator && 'caches' in window) {
-    // Send message to service worker
-    navigator.serviceWorker.controller?.postMessage({type: 'CLEAR_CACHE'});
-
-    // Also clear caches directly
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => caches.delete(cacheName))
-      );
-    }).then(() => {
-      console.log('All caches cleared manually');
-      if (typeof showNotification === 'function') {
-        showNotification('Cache cleared! App will refresh...', 'success');
-      }
-      setTimeout(() => window.location.reload(), 1000);
-    });
+// Clear cache and update app – for visible "Update app" button (old phones get latest)
+window.clearCacheAndUpdate = function() {
+  if (typeof showNotification === 'function') {
+    showNotification('Clearing cache & updating app...', 'info');
   }
+  const doReload = () => {
+    if (typeof showNotification === 'function') {
+      showNotification('Updated! Reloading...', 'success');
+    }
+    window.location.reload(true);
+  };
+  if (!('caches' in window) && !('serviceWorker' in navigator)) {
+    doReload();
+    return;
+  }
+  const unregister = 'serviceWorker' in navigator
+    ? navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister())))
+    : Promise.resolve();
+  const clearCaches = 'caches' in window
+    ? caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
+    : Promise.resolve();
+  navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_CACHE' });
+  Promise.all([unregister, clearCaches]).then(() => {
+    console.log('Cache cleared and SW unregistered');
+    setTimeout(doReload, 600);
+  }).catch(() => setTimeout(doReload, 600));
 };
 
-// Helper function to force update
+window.clearAppCache = function() { window.clearCacheAndUpdate(); };
+
 window.forceAppUpdate = function() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready.then(registration => {
-      registration.update().then(() => {
-        console.log('Forced service worker update');
-        setTimeout(() => window.location.reload(), 1000);
-      });
+      registration.update().then(() => setTimeout(() => window.location.reload(true), 800));
     });
   }
 };
-
-console.log('Cache management helpers loaded');
-console.log('Use window.clearAppCache() to clear cache manually');  
-console.log('Use window.forceAppUpdate() to force update');
 
         // ========================================
         // EVENT LISTENERS

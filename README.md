@@ -8,7 +8,7 @@ Split expenses with friends, roommates, or travel buddies. Create groups, add ex
 
 SplitXpense uses two main services:
 
-| Service   | Role |
+| Service  | Role |
 |----------|------|
 | **Vercel**   | Hosts the app. The site runs at `https://splitxpense.vercel.app`. Pushing to GitHub triggers a deploy. |
 | **Supabase** | Database and real-time sync. Stores users, groups, expenses, and keeps all devices in sync. |
@@ -16,8 +16,8 @@ SplitXpense uses two main services:
 ```
 ┌─────────────┐      push       ┌─────────────┐      deploy      ┌─────────────┐
 │   GitHub    │ ──────────────► │   Vercel    │ ──────────────►  │   Live app  │
-│  (repository)│                 │  (hosting)   │                 │ splitxpense │
-└─────────────┘                 └──────┬──────┘                 │ .vercel.app │
+│ (repository)│                 │  (hosting)  │                  │ splitxpense │
+└─────────────┘                 └──────┬──────┘                  │ .vercel.app │
                                        │                         └──────┬──────┘
                                        │                                │
                                        │     reads/writes               │

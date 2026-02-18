@@ -26,11 +26,11 @@
     <meta name="description" content="SplitXpense - A beautiful, intuitive expense splitting app for friends and groups">
 </head>
 <body>
-    <!-- Loading Screen - Premium Design -->
+    <!-- Loading Screen - no black bg, logo clear and not compressed -->
     <div id="loadingScreen" class="loading-screen" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; background: linear-gradient(135deg, #f8fafc 0%, #ecfdf5 100%);">
         <div style="text-align: center; padding: 2rem;">
-            <div style="margin-bottom: 1.5rem;">
-                <img src="images/logo.png" alt="SplitXpense" style="height: 120px; width: auto; margin-bottom: 0.5rem; display: block; margin-left: auto; margin-right: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="loading-logo-wrap" style="margin-bottom: 1.5rem; background: transparent;">
+                <img src="images/logo.png" alt="SplitXpense" class="loading-logo-img" style="height: 160px; width: auto; min-width: 120px; max-width: 280px; margin: 0 auto; display: block; object-fit: contain; image-rendering: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <h1 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; margin: 0; display: none;">SplitXpense</h1>
                 <p style="color: #64748b; font-family: 'Inter', sans-serif; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500; letter-spacing: 0.025em;">Share expenses, split the cost</p>
             </div>
@@ -41,6 +41,8 @@
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
+                .loading-logo-wrap { border: none; border-radius: 0; box-shadow: none; }
+                .loading-logo-img { vertical-align: middle; }
             </style>
         </div>
     </div>
@@ -54,7 +56,8 @@
                     <h1>SplitXpense</h1>
                     <p>Share expenses, split the cost</p>
                 </div>
-                <div class="user-info">
+                <div class="user-info" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="button" class="btn-link header-update-app" data-action="clearCacheAndUpdate" title="Get latest app version (clear cache & refresh)" aria-label="Clear cache and update app" style="font-size: 0.8rem; color: var(--primary-600, #16a34a); font-weight: 600;">↻ Update app</button>
                     <span id="currentUserName">Loading...</span>
                     <button class="btn-link" data-action="showEditUserNameModal" title="Edit Name" type="button" aria-label="Edit user name">✎</button>
                 </div>
@@ -1745,7 +1748,7 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
             });
         }
 
-        // Add new member in edit mode
+        // Add new member in edit mode - add to grid so it shows with other members
         function addNewEditMember() {
             const input = DOMUtils.get('editNewMemberInput');
             if (!input) return;
@@ -1756,7 +1759,10 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
                 return;
             }
 
-            // Check for duplicates
+            const grid = DOMUtils.get('editMemberSelectionGrid');
+            if (!grid) return;
+
+            // Check for duplicates (grid + dynamic)
             const existingMembers = Array.from(document.querySelectorAll('#editMemberSelectionGrid .selectable-box')).map(box => box.dataset.member);
             const dynamicMembers = Array.from(document.querySelectorAll('#editDynamicMembers .dynamic-item-name')).map(el => el.textContent);
 
@@ -1765,15 +1771,18 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
                 return;
             }
 
-            const dynamicContainer = DOMUtils.get('editDynamicMembers');
-            if (!dynamicContainer) {
-                Logger?.error('Edit dynamic members container not found');
-                return;
+            // Remove "No participants yet" message if present
+            const emptyMsg = grid.querySelector('p');
+            if (emptyMsg) {
+                emptyMsg.remove();
             }
 
-            const itemId = `editMember${editDynamicMemberCounter++}`;
-            const memberItem = createMemberItem(memberName, itemId, true);
-            dynamicContainer.appendChild(memberItem);
+            // Add new member as a selectable box in the grid so it shows up with the others
+            const box = DOMUtils.create('div', {
+                className: 'selectable-box selected',
+                'data-member': memberName
+            }, escapeHtml(memberName));
+            grid.appendChild(box);
             input.value = '';
             showNotification('Member added successfully', 'success');
         }
@@ -2245,25 +2254,37 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
             });
         }
 
-        // Helper function to manually clear cache
-        window.clearAppCache = function() {
-            if ('serviceWorker' in navigator && 'caches' in window) {
-                // Send message to service worker
-                navigator.serviceWorker.controller?.postMessage({type: 'CLEAR_CACHE'});
-
-                // Also clear caches directly
-                caches.keys().then(cacheNames => {
-                    return Promise.all(
-                        cacheNames.map(cacheName => caches.delete(cacheName))
-                    );
-                }).then(() => {
-                    Logger?.info('All caches cleared manually');
-                    if (typeof showNotification === 'function') {
-                        showNotification('Cache cleared! App will refresh...', 'success');
-                    }
-                    setTimeout(() => window.location.reload(), 1000);
-                });
+        // Clear cache and update app – for visible "Update app" button (old phones get latest)
+        window.clearCacheAndUpdate = function() {
+            if (typeof showNotification === 'function') {
+                showNotification('Clearing cache & updating app...', 'info');
             }
+            const doReload = () => {
+                if (typeof showNotification === 'function') {
+                    showNotification('Updated! Reloading...', 'success');
+                }
+                window.location.reload(true);
+            };
+            if (!('caches' in window) && !('serviceWorker' in navigator)) {
+                doReload();
+                return;
+            }
+            const unregister = 'serviceWorker' in navigator
+                ? navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister())))
+                : Promise.resolve();
+            const clearCaches = 'caches' in window
+                ? caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
+                : Promise.resolve();
+            navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_CACHE' });
+            Promise.all([unregister, clearCaches]).then(() => {
+                Logger?.info('Cache cleared and SW unregistered');
+                setTimeout(doReload, 600);
+            }).catch(() => setTimeout(doReload, 600));
+        };
+
+        // Helper function to manually clear cache (still available for console)
+        window.clearAppCache = function() {
+            window.clearCacheAndUpdate();
         };
 
         // Helper function to force update
@@ -2272,7 +2293,7 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
                 navigator.serviceWorker.ready.then(registration => {
                     registration.update().then(() => {
                         Logger?.info('Forced service worker update');
-                        setTimeout(() => window.location.reload(), 1000);
+                        setTimeout(() => window.location.reload(true), 800);
                     });
                 });
             }
