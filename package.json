@@ -1,13 +1,13 @@
 {
-  "name": "spliteasy-supabase",
+  "name": "splitxpense-supabase",
   "version": "1.0.0",
-  "description": "SplitEasy - Expense Splitting App with Supabase",
+  "description": "SplitXpense - Expense Splitting App with Supabase",
   "scripts": {
     "dev": "node scripts/generate-config.js && python -m http.server 8000",
     "generate-config": "node scripts/generate-config.js",
     "start": "node scripts/generate-config.js && python -m http.server 8000"
   },
-  "keywords": ["expense", "split", "supabase"],
+  "keywords": ["expense", "split", "splitxpense"],
   "author": "",
   "license": "MIT",
   "devDependencies": {

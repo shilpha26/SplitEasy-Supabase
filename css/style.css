@@ -1489,12 +1489,13 @@ header .container {
 }
 
 .empty-state::before {
-    content: '💸';
+    content: '';
     display: block;
-    font-size: 4rem;
-    margin-bottom: var(--space-6);
+    width: 120px;
+    height: 120px;
+    margin: 0 auto var(--space-6);
+    background: url('../images/logo.png') center/contain no-repeat;
     animation: bounce 2s ease-in-out infinite;
-    filter: grayscale(0.2);
 }
 
 @keyframes bounce {
@@ -2761,7 +2762,8 @@ a:focus-visible {
     }
     
     .empty-state::before {
-        font-size: 3rem;
+        width: 96px;
+        height: 96px;
     }
     
     /* Notification */

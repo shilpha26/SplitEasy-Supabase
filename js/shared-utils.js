@@ -1,5 +1,5 @@
-// shared-utils.js - Optimized utilities for SplitEasy
-console.log('Loading SplitEasy shared utilities...');
+// shared-utils.js - Optimized utilities for SplitXpense
+console.log('Loading SplitXpense shared utilities...');
 
 // ========================================
 // PERFORMANCE OPTIMIZATIONS
@@ -323,4 +323,4 @@ window.debugApp = function() {
     };
 };
 
-console.log('SplitEasy shared utilities loaded successfully');
+console.log('SplitXpense shared utilities loaded successfully');

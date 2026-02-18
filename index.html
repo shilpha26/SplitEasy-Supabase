@@ -3,25 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<<<<<<< HEAD
     <title>SplitEasy - Share expenses, split the cost</title>
+=======
+    <script>
+        // GitHub Pages: redirect to Vercel so the app works (Vercel is the active deployment)
+        if (window.location.hostname === 'shilpha26.github.io' && window.location.pathname.indexOf('SplitXpense') !== -1) {
+            var vercel = 'https://splitxpense.vercel.app/' + (window.location.search || '');
+            window.location.replace(vercel);
+        }
+    </script>
+    <title>SplitXpense - Share expenses, split the cost</title>
+>>>>>>> 272e88e (Rebrand to SplitXpense: UI, meta, manifest, share links, realtime channel; add logo, 404, README; Vercel rewrites)
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="description" content="SplitEasy - A beautiful, intuitive expense splitting app for friends and groups">
+    <meta name="description" content="SplitXpense - A beautiful, intuitive expense splitting app for friends and groups">
 </head>
 <body>
     <!-- Loading Screen - Premium Design -->
     <div id="loadingScreen" class="loading-screen" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; background: linear-gradient(135deg, #f8fafc 0%, #ecfdf5 100%);">
         <div style="text-align: center; padding: 2rem;">
             <div style="margin-bottom: 1.5rem;">
-                <h1 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; margin: 0;">SplitEasy</h1>
+                <img src="images/logo.png" alt="SplitXpense" style="height: 120px; width: auto; margin-bottom: 0.5rem; display: block; margin-left: auto; margin-right: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <h1 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; margin: 0; display: none;">SplitXpense</h1>
                 <p style="color: #64748b; font-family: 'Inter', sans-serif; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500; letter-spacing: 0.025em;">Share expenses, split the cost</p>
             </div>
             <div class="spinner" style="border: 3px solid #e2e8f0; border-top: 3px solid #22c55e; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto;"></div>
@@ -41,7 +55,7 @@
         <header>
             <div class="container">
                 <div class="logo">
-                    <h1>SplitEasy</h1>
+                    <h1>SplitXpense</h1>
                     <p>Share expenses, split the cost</p>
                 </div>
                 <div class="user-info">
@@ -80,7 +94,7 @@
     <div id="userLoginModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Welcome to SplitEasy</h3>
+                <h3>Welcome to SplitXpense</h3>
             </div>
             <div class="modal-body">
                                 <!-- New User Form -->
@@ -292,7 +306,7 @@
         }
 
         async function initializeApp() {
-            Logger?.info('Initializing SplitEasy...');
+            Logger?.info('Initializing SplitXpense...');
             updateLoadingMessage('Loading application...');
 
             // REQUIRED: Initialize Supabase - app won't work without it
@@ -351,8 +365,8 @@
             while (retries < 5 && !supabaseInitialized) {
                 supabaseInitialized = window.initializeSupabase();
                 if (!supabaseInitialized) {
-                    updateLoadingMessage(`Connecting to database... (${retries + 1}/5)`);
-                    Logger?.debug(`Supabase initialization attempt ${retries + 1}/5...`);
+updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
+                Logger?.debug(`Supabase initialization attempt ${retries + 1}/5...`);
                     await new Promise(resolve => setTimeout(resolve, 500));
                     retries++;
                 }
@@ -401,7 +415,7 @@
             }
 
             if (!window.supabaseClient) {
-                const errorMsg = 'Supabase client not available. Please refresh the page.';
+                const errorMsg = 'Supabase not available. Please refresh the page.';
                 Logger?.error(errorMsg);
                 updateLoadingMessage('Initialization failed');
                 if (typeof showNotification === 'function') {
@@ -412,7 +426,7 @@
                     style: 'padding: 2rem; text-align: center;'
                 });
                 const h1 = DOMUtils.create('h1', {}, 'Connection Error');
-                const p1 = DOMUtils.create('p', {}, 'Supabase client failed to initialize. Please refresh the page.');
+                const p1 = DOMUtils.create('p', {}, 'Supabase failed to initialize. Please refresh the page.');
                 const buttonContainer = DOMUtils.create('p', {
                     style: 'margin-top: 1rem;'
                 });
@@ -432,7 +446,7 @@
                 return;
             }
 
-            Logger?.info('Supabase initialized successfully');
+            Logger?.info('Supabase connected successfully');
             updateLoadingMessage('Loading your data...');
 
             // Check for return URL (from shared link)
@@ -996,7 +1010,7 @@
             try {
                 // REQUIRED: Load from Supabase first
                 if (!window.supabaseClient) {
-                    throw new Error('Supabase client not available');
+                    throw new Error('Supabase not available');
                 }
 
                 if (!window.currentUser) {
@@ -1534,7 +1548,7 @@
             try {
                 // REQUIRED: Save to Supabase first
                 if (!window.supabaseClient) {
-                    throw new Error('Supabase client not available');
+                    throw new Error('Supabase not available');
                 }
 
                 if (typeof window.syncGroupToDatabase !== 'function') {
@@ -1548,7 +1562,7 @@
                     throw new Error('Group sync returned no result');
                 }
                 
-                Logger?.info('Group created in Supabase:', result);
+                Logger?.info('Group created:', result);
                 
                 // Add to local array and cache
                 window.groups.push(newGroup);
@@ -1561,7 +1575,7 @@
                 // Reload groups from Supabase to ensure sync
                 await loadGroups();
             } catch (error) {
-                Logger?.error('Failed to create group in Supabase:', error);
+                Logger?.error('Failed to create group:', error);
                 Logger?.error('Error details:', {
                     message: error.message,
                     code: error.code,
@@ -1855,7 +1869,7 @@
 
                 // REQUIRED: Update in Supabase first
                 if (!window.supabaseClient) {
-                    throw new Error('Supabase client not available');
+                    throw new Error('Supabase not available');
                 }
 
                 if (typeof window.syncGroupToDatabase !== 'function') {
@@ -2030,7 +2044,7 @@
             try {
                 // REQUIRED: Delete from Supabase first
                 if (!window.supabaseClient) {
-                    throw new Error('Supabase client not available');
+                    throw new Error('Supabase not available');
                 }
 
                 if (typeof window.deleteGroupFromDatabase !== 'function') {

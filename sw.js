@@ -1,14 +1,14 @@
 // Force cache update by incrementing version
-const CACHE_VERSION = 'spliteasy-v2026021801'; // Share links + cache refresh for all devices
+const CACHE_VERSION = 'splitxpense-v2026021801'; // Share links + cache refresh for all devices
 const CACHE_NAME = CACHE_VERSION;
 
-console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);
+console.log('🔄 SplitXpense Service Worker Loading with cache:', CACHE_NAME);
 
 // Detect base path for GitHub Pages subdirectory
 const getBasePath = () => {
   const path = self.location.pathname;
   // If path contains more than just '/', extract base path
-  // e.g., '/SplitEasy-Supabase/sw.js' -> '/SplitEasy-Supabase'
+  // e.g., '/SplitXpense-Supabase/sw.js' -> '/SplitXpense-Supabase'
   const parts = path.split('/').filter(p => p);
   
   // Only add base path if we're actually in a subdirectory (not just '/sw.js')
@@ -45,7 +45,7 @@ const urlsToCache = [
 
 // Install event - cache resources and FORCE UPDATE
 self.addEventListener('install', event => {
-  console.log('✅ SplitEasy: Service worker installing with version:', CACHE_VERSION);
+  console.log('✅ SplitXpense: Service worker installing with version:', CACHE_VERSION);
 
   // FORCE IMMEDIATE ACTIVATION - This is key for getting updates
   self.skipWaiting();
@@ -53,7 +53,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(async cache => {
-        console.log('📦 SplitEasy: Caching app shell');
+        console.log('📦 SplitXpense: Caching app shell');
         // Cache files individually to handle failures gracefully
         const cachePromises = urlsToCache.map(url => 
           cache.add(url).catch(err => {
@@ -62,17 +62,17 @@ self.addEventListener('install', event => {
           })
         );
         await Promise.all(cachePromises);
-        console.log('✅ SplitEasy: App shell cached successfully');
+        console.log('✅ SplitXpense: App shell cached successfully');
       })
       .catch(error => {
-        console.error('❌ SplitEasy: Cache failed:', error);
+        console.error('❌ SplitXpense: Cache failed:', error);
       })
   );
 });
 
 // Activate event - clean up old caches IMMEDIATELY
 self.addEventListener('activate', event => {
-  console.log('🔄 SplitEasy: Service worker activating...');
+  console.log('🔄 SplitXpense: Service worker activating...');
 
   // TAKE CONTROL IMMEDIATELY - Forces immediate update
   self.clients.claim();
@@ -83,13 +83,13 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ SplitEasy: Deleting old cache:', cacheName);
+            console.log('🗑️ SplitXpense: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('✅ SplitEasy: Service worker activated and old caches cleared');
+      console.log('✅ SplitXpense: Service worker activated and old caches cleared');
 
       // Notify all clients that update is available
       return self.clients.matchAll().then(clients => {
@@ -124,7 +124,7 @@ self.addEventListener('fetch', event => {
       fetch(event.request)
         .then(response => {
           if (response && response.status === 200) {
-            console.log('🌐 SplitEasy: Serving fresh HTML from network:', event.request.url);
+            console.log('🌐 SplitXpense: Serving fresh HTML from network:', event.request.url);
             // Cache the fresh response
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then(cache => {
@@ -135,7 +135,7 @@ self.addEventListener('fetch', event => {
           throw new Error('Network response was not ok');
         })
         .catch(() => {
-          console.log('📱 SplitEasy: Network failed, serving from cache:', event.request.url);
+          console.log('📱 SplitXpense: Network failed, serving from cache:', event.request.url);
           return caches.match(event.request).then(response => {
             return response || caches.match(BASE_PATH + '/index.html' || '/index.html');
           });
@@ -149,11 +149,11 @@ self.addEventListener('fetch', event => {
     caches.match(event.request)
       .then(response => {
         if (response) {
-          console.log('📦 SplitEasy: Serving from cache:', event.request.url);
+          console.log('📦 SplitXpense: Serving from cache:', event.request.url);
           return response;
         }
 
-        console.log('🌐 SplitEasy: Fetching from network:', event.request.url);
+        console.log('🌐 SplitXpense: Fetching from network:', event.request.url);
         return fetch(event.request).then(response => {
           // Don't cache non-successful responses
           if (!response || response.status !== 200 || response.type !== 'basic') {
@@ -172,7 +172,7 @@ self.addEventListener('fetch', event => {
         });
       })
       .catch(() => {
-        console.log('❌ SplitEasy: Network failed, serving offline page');
+        console.log('❌ SplitXpense: Network failed, serving offline page');
         // Return a custom offline page if available
         if (event.request.destination === 'document') {
           return caches.match(BASE_PATH + '/index.html' || '/index.html');
@@ -184,7 +184,7 @@ self.addEventListener('fetch', event => {
 // Handle background sync for offline actions
 self.addEventListener('sync', event => {
   if (event.tag === 'background-sync') {
-    console.log('🔄 SplitEasy: Background sync triggered');
+    console.log('🔄 SplitXpense: Background sync triggered');
     event.waitUntil(syncData());
   }
 });
@@ -194,7 +194,7 @@ function syncData() {
   return new Promise((resolve) => {
     // Your app already handles data in localStorage
     // This is just for logging
-    console.log('✅ SplitEasy: Data sync completed');
+    console.log('✅ SplitXpense: Data sync completed');
     resolve();
   });
 }
@@ -219,15 +219,15 @@ self.addEventListener('push', event => {
 
 // ENHANCED: Handle messages from main thread
 self.addEventListener('message', event => {
-  console.log('📢 SplitEasy: Received message:', event.data);
+  console.log('📢 SplitXpense: Received message:', event.data);
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('⚡ SplitEasy: Skipping waiting...');
+    console.log('⚡ SplitXpense: Skipping waiting...');
     self.skipWaiting();
   }
 
   if (event.data && event.data.type === 'CLEAR_CACHE') {
-    console.log('🧹 SplitEasy: Clearing all caches...');
+    console.log('🧹 SplitXpense: Clearing all caches...');
     event.waitUntil(
       caches.keys().then(cacheNames => {
         return Promise.all(
@@ -236,7 +236,7 @@ self.addEventListener('message', event => {
           })
         );
       }).then(() => {
-        console.log('✅ SplitEasy: All caches cleared');
+        console.log('✅ SplitXpense: All caches cleared');
         if (event.ports[0]) {
           event.ports[0].postMessage({success: true});
         }
@@ -251,4 +251,4 @@ self.addEventListener('message', event => {
   }
 });
 
-console.log('✅ Enhanced SplitEasy Service Worker loaded successfully with version:', CACHE_VERSION);
+console.log('✅ Enhanced SplitXpense Service Worker loaded successfully with version:', CACHE_VERSION);

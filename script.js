@@ -4,7 +4,7 @@ let isUserIdAvailable = false;
 
 // Initialize app with previous users check
 async function initializeApp() {
-    console.log('🚀 Initializing SplitEasy...');
+    console.log('🚀 Initializing SplitXpense...');
     
     // Check for existing user
     const userData = localStorage.getItem('spliteasy_current_user');

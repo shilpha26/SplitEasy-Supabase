@@ -1,202 +1,143 @@
-# SplitEasy - Expense Splitting App
+# SplitXpense – Expense Splitting App
 
-A modern expense splitting application built with vanilla JavaScript and Supabase. Split expenses with friends, roommates, or travel buddies easily!
+Split expenses with friends, roommates, or travel buddies. Create groups, add expenses, and see who owes what. Data syncs across devices and works offline (PWA).
 
-## 📋 What is SplitEasy?
+---
 
-SplitEasy helps you:
-- ✅ Create groups and split expenses
-- ✅ Track who paid and who owes what
-- ✅ Calculate balances automatically
-- ✅ Sync data across devices with Supabase
-- ✅ Works offline (Progressive Web App)
+## How the project is connected
 
-## 🚀 Quick Start Guide
+SplitXpense uses two main services:
 
-### Step 1: Get Supabase Credentials
+| Service   | Role |
+|----------|------|
+| **Vercel**   | Hosts the app. The site runs at `https://splitxpense.vercel.app`. Pushing to GitHub triggers a deploy. |
+| **Supabase** | Database and real-time sync. Stores users, groups, expenses, and keeps all devices in sync. |
 
-1. Go to [supabase.com](https://supabase.com) and create a free account
-2. Create a new project
-3. Go to **Settings** → **API**
-4. Copy your:
-   - **Project URL** (looks like: `https://xxxxx.supabase.co`)
-   - **anon/public key** (long JWT token)
+```
+┌─────────────┐      push       ┌─────────────┐      deploy      ┌─────────────┐
+│   GitHub    │ ──────────────► │   Vercel    │ ──────────────►  │   Live app  │
+│  (repository)│                 │  (hosting)   │                 │ splitxpense │
+└─────────────┘                 └──────┬──────┘                 │ .vercel.app │
+                                       │                         └──────┬──────┘
+                                       │                                │
+                                       │     reads/writes               │
+                                       │         (API)                  │
+                                       ▼                                ▼
+                                ┌─────────────┐                 ┌─────────────┐
+                                │  Supabase   │ ◄───────────────│   Browser   │
+                                │ (database,  │   config in     │  (your app  │
+                                │  realtime)  │   js/config.js  │   in use)   │
+                                └─────────────┘                 └─────────────┘
+```
 
-### Step 2: Configure the App
+- **Code** lives in **GitHub**. You edit and push from your machine.
+- **Vercel** builds and serves the app from that repo. No separate “backend server” to run.
+- **Supabase** is the backend: it holds all data and handles real-time updates. The app talks to it from the browser using the URL and anon key in `js/config.js`.
 
-**Option A: Using Environment Variables (Recommended)**
+---
 
-1. Create a file named `.env` in the project root
-2. Add your Supabase credentials:
-   ```env
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your-anon-key-here
-   ```
-3. Run this command to generate the config:
-   ```bash
-   npm run generate-config
-   ```
+## What is SplitXpense?
 
-**Option B: Manual Configuration (Quick Start)**
+- Create groups and add members  
+- Add expenses (who paid, who’s in the split)  
+- See balances and who owes whom  
+- Sync across devices via Supabase  
+- Works offline (Progressive Web App)  
+- Share group links so others can join  
 
-1. Create a file `js/config.js`
-2. Add this code with your credentials:
-   ```javascript
-   window.SUPABASECONFIG = {
-       url: 'https://your-project.supabase.co',
-       anonKey: 'your-anon-key-here'
-   };
-   ```
+---
 
-### Step 3: Start the App
+## Project structure (what lives where)
 
-**Using Python (Easiest):**
+```
+SplitXpense/
+├── index.html           # Home: list of groups, create group, sign in
+├── group-detail.html    # Single group: expenses, balances, share
+├── 404.html             # Redirect to Vercel (for GitHub Pages)
+├── vercel.json          # Vercel: rewrites (/ → index.html, /group-detail → group-detail.html)
+├── manifest.json        # PWA name, icons
+├── sw.js                # Service worker (offline, cache)
+├── css/
+│   └── style.css
+├── js/
+│   ├── config.js        # Supabase URL + anon key (you create this, not in git)
+│   ├── shared-supabase.js   # Connects to Supabase, init, helpers
+│   ├── shared-sync.js       # Sync groups/expenses + realtime
+│   ├── shared-utils.js     # Common helpers, localStorage
+│   ├── logger.js, error-handler.js, dom-utils.js, app-state.js, modal-utils.js
+│   └── ...
+└── README.md            # This file
+```
+
+- **Vercel** serves the files above. `vercel.json` makes `/` and `/group-detail` point to the right HTML.
+- **Supabase** is used only from the browser via `shared-supabase.js` and `shared-sync.js`; no Node server in the middle.
+
+---
+
+## Quick start (local)
+
+### 1. Get Supabase credentials
+
+1. Go to [supabase.com](https://supabase.com) and create a project.  
+2. **Settings** → **API**: copy **Project URL** and **anon public** key.
+
+### 2. Add config (so the app can talk to Supabase)
+
+Create `js/config.js`:
+
+```javascript
+window.SUPABASECONFIG = {
+  url: 'https://YOUR_PROJECT.supabase.co',
+  anonKey: 'YOUR_ANON_KEY'
+};
+```
+
+(Do not commit this file; it’s in `.gitignore`.)
+
+### 3. Run the app locally
+
 ```bash
 python -m http.server 8000
 ```
 
-**Using Node.js:**
-```bash
-npm run dev
-```
+Open **http://localhost:8000**.  
+Use a local server (not opening `index.html` as a file) so Supabase and the service worker work.
 
-**Using VS Code:**
-1. Install "Live Server" extension
-2. Right-click `index.html` → "Open with Live Server"
+### 4. Set up the database in Supabase
 
-### Step 4: Open in Browser
+In Supabase **SQL Editor**, run the SQL from `supabase-migration.sql` (or your schema file), then set up RLS as in `supabase-rls-policies.sql` (or your RLS docs).
 
-Open: **http://localhost:8000**
+---
 
-> ⚠️ **Important:** Don't just double-click `index.html` - you need a local server because:
-> - Service Workers require `localhost` (not `file://`)
-> - CORS restrictions for Supabase
-> - Better localStorage support
+## Deployment (Vercel + Supabase)
 
-## 📦 Setup Database
+- **Vercel**: Connect this GitHub repo to a Vercel project. Production URL will be something like `https://splitxpense.vercel.app`. Each push to the linked branch deploys the app.
+- **Supabase**: Same project for local and production. Put the same Supabase URL and anon key in `js/config.js` when building, or use Vercel environment variables and a build step that writes `js/config.js` from them.
+- **Domains**: In Vercel you can add your custom domain and redirects (e.g. old domain → new one).
 
-The app needs database tables. Check `DATABASE_SETUP.md` for detailed instructions.
+No separate “backend” deploy: the backend is Supabase; the front end is static files on Vercel.
 
-**Quick Setup:**
-1. Go to your Supabase project → **SQL Editor**
-2. Run the SQL from `supabase-migration.sql`
-3. Set up Row Level Security (RLS) policies from `supabase-rls-policies.sql`
+---
 
-## 🎯 How to Use
+## Security
 
-1. **Create an Account**
-   - Enter your name
-   - Choose a unique User ID (or generate one)
-   - Click "Continue"
+- `js/config.js` and `.env` are gitignored.  
+- Only the Supabase **anon** (public) key is in the front end; it’s safe for browser use with RLS.  
+- Never commit secret keys or service-role keys.
 
-2. **Create a Group**
-   - Click "Create New Group"
-   - Enter group name (e.g., "Weekend Trip")
-   - Add members (friends, roommates, etc.)
-   - Click "Create Group"
+---
 
-3. **Add Expenses**
-   - Open a group
-   - Click "Add Expense"
-   - Enter amount, who paid, and who should split
-   - Save the expense
+## Troubleshooting
 
-4. **View Balances**
-   - See who owes what automatically
-   - Track settlements
-   - View expense history
+| Issue | Check |
+|-------|--------|
+| “Supabase not configured” | `js/config.js` exists and has correct `url` and `anonKey`. |
+| Can’t connect to Supabase | Internet, Supabase project status, and CORS (use a real origin, e.g. localhost or Vercel URL). |
+| 404 on Vercel | `vercel.json` rewrites: `/` → `/index.html`, `/group-detail` → `/group-detail.html`. |
+| Data not syncing | Supabase tables and RLS set up; realtime enabled if you use it; same Supabase project in config. |
 
-## 📁 Project Structure
+---
 
-```
-SplitEasy-Supabase/
-├── index.html              # Main app page
-├── group-detail.html       # Group details page
-├── css/
-│   └── style.css          # All styles
-├── js/
-│   ├── config.js          # Supabase config (create this)
-│   ├── logger.js          # Logging system
-│   ├── error-handler.js    # Error handling
-│   ├── dom-utils.js       # DOM utilities
-│   ├── app-state.js       # State management
-│   ├── modal-utils.js     # Modal dialogs
-│   ├── shared-utils.js    # Common utilities
-│   ├── shared-supabase.js  # Supabase client
-│   └── shared-sync.js     # Database sync
-├── sw.js                  # Service Worker (PWA)
-└── manifest.json          # PWA manifest
-```
+## License
 
-## 🔧 Deployment
-
-### Deploy to GitHub Pages
-
-1. **Set up GitHub Secrets:**
-   - Go to your repo → **Settings** → **Secrets and variables** → **Actions**
-   - Add secrets:
-     - `SUPABASE_URL`: Your Supabase project URL
-     - `SUPABASE_ANON_KEY`: Your Supabase anon key
-
-2. **Push to main branch:**
-   - The GitHub Action will automatically:
-     - Generate `js/config.js` from secrets
-     - Deploy to GitHub Pages
-
-> **Note:** `js/config.js` is gitignored and generated during deployment.
-
-## 🔐 Security Notes
-
-- ✅ `js/config.js` is gitignored (never commit it)
-- ✅ `.env` is gitignored (local development only)
-- ✅ GitHub Secrets used for production
-- ⚠️ Never commit sensitive credentials
-
-## 🛠️ Development
-
-### Code Quality Features
-
-- ✅ **Security**: XSS prevention, safe DOM manipulation
-- ✅ **Accessibility**: ARIA labels, keyboard navigation
-- ✅ **Performance**: DOM caching, optimized queries
-- ✅ **Error Handling**: Centralized error management
-- ✅ **Logging**: Environment-aware logging system
-
-### Key Utilities
-
-- `Logger` - Logging system (only logs in development)
-- `DOMUtils` - Safe DOM manipulation with caching
-- `AppState` - Centralized state management
-- `ModalUtils` - Accessible modal dialogs
-- `ErrorHandler` - Consistent error handling
-
-## 📚 Documentation
-
-- `DATABASE_SETUP.md` - Database setup instructions
-- `OPTIMIZATION_SUMMARY.md` - Code optimization details
-- `OPTIMIZATION_GUIDE.md` - How to use new utilities
-
-## 🐛 Troubleshooting
-
-**App won't load?**
-- Make sure you're using a local server (not `file://`)
-- Check browser console for errors
-- Verify Supabase credentials in `js/config.js`
-
-**Database errors?**
-- Check if tables exist in Supabase
-- Verify RLS policies are set up
-- Check browser console for specific errors
-
-**Service Worker issues?**
-- Clear browser cache
-- Use `window.clearAppCache()` in console
-- Check if service worker is registered in DevTools
-
-## 📝 License
-
-This project is open source and available for personal and commercial use.
-
-## 🙏 Support
-
-For issues or questions, check the documentation files or open an issue in the repository.
+Open source for personal and commercial use.

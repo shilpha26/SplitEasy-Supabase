@@ -1,6 +1,6 @@
 {
-  "name": "SplitEasy - Expense Splitter",
-  "short_name": "SplitEasy",
+  "name": "SplitXpense - Expense Splitter",
+  "short_name": "SplitXpense",
   "description": "A beautiful, intuitive expense splitting app for friends and groups",
   "start_url": "./",
   "scope": "./",

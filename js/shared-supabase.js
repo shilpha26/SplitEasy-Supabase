@@ -1,5 +1,5 @@
 // shared-supabase-enhanced.js - Enhanced Supabase Management
-console.log('Loading enhanced SplitEasy Supabase integration...');
+console.log('Loading SplitXpense Supabase integration...');
 
 // ========================================
 // SUPABASE CONFIGURATION
@@ -22,7 +22,7 @@ function getSupabaseConfig() {
 // Check both window.SUPABASECONFIG and global SUPABASECONFIG
 if ((typeof SUPABASECONFIG === 'undefined' || SUPABASECONFIG === null) &&
     (typeof window.SUPABASECONFIG === 'undefined' || window.SUPABASECONFIG === null)) {
-    console.warn('⚠️ Supabase config not found. Supabase features will be disabled.');
+    console.warn('⚠️ Supabase config not found. Sync features will be disabled.');
     console.warn('📝 Please create js/config.js with your Supabase credentials.');
     console.warn('📝 For GitHub Pages: You need to manually add config.js to your repository (or use GitHub Secrets)');
     // Create a dummy config to prevent errors
@@ -51,7 +51,7 @@ const maxRetries = 5;
 // Enhanced Supabase initialization with retry logic
 window.initializeSupabase = function() {
     if (window.supabase && window.supabaseClient) {
-        console.log('Supabase already initialized');
+        console.log('Backend already initialized');
         return true;
     }
 

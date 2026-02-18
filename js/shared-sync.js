@@ -1,5 +1,5 @@
 // shared-sync-database-fixed.js - Schema-Aware Sync System
-console.log('Loading database schema-aware SplitEasy sync system...');
+console.log('Loading database schema-aware SplitXpense sync system...');
 
 // ========================================
 // GLOBAL VARIABLES & CONFIGURATION
@@ -1455,7 +1455,7 @@ window.startRealtimeSync = function() {
         // Subscribe to all groups and expenses changes
         // We'll filter in the handler to only process relevant changes
         const groupsChannel = window.supabaseClient
-            .channel('spliteasy-realtime')
+            .channel('splitxpense-realtime')
             .on('postgres_changes', 
                 { 
                     event: '*', 
@@ -1926,4 +1926,4 @@ window.SCHEMA_MAPPING = SCHEMA_MAPPING;
 // Export saveGroupsToLocalStorageSafe for use in other scripts
 window.saveGroupsToLocalStorageSafe = saveGroupsToLocalStorageSafe;
 
-console.log('Database schema-aware SplitEasy sync system loaded successfully');
+console.log('Database schema-aware SplitXpense sync system loaded successfully');
