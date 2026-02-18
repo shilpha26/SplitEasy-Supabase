@@ -2691,14 +2691,14 @@
             return settlements;
         }
 
-        // Base URL for sharing (always use Vercel URL for cleaner links)
+        // Base URL for sharing - use .html so link works on all devices (no reliance on server rewrites)
         const SHARE_BASE_URL = 'https://spliteasy-skyv.vercel.app';
 
         async function shareGroup() {
             const modal = document.getElementById('shareModal');
             const shareLink = document.getElementById('shareLink');
             const groupId = new URLSearchParams(window.location.search).get('id');
-            const url = `${SHARE_BASE_URL}/group-detail?id=${groupId}`;
+            const url = `${SHARE_BASE_URL}/group-detail.html?id=${groupId}`;
 
             if (shareLink) shareLink.value = url;
             if (modal) modal.style.display = 'block';
@@ -2842,7 +2842,7 @@
 
         async function shareWithSnapshot() {
             const groupId = new URLSearchParams(window.location.search).get('id');
-            const url = `${SHARE_BASE_URL}/group-detail?id=${groupId}`;
+            const url = `${SHARE_BASE_URL}/group-detail.html?id=${groupId}`;
             const groupName = currentGroup?.name || 'Group';
             const shareText = `Check out the settlements for "${groupName}":\n${url}`;
             

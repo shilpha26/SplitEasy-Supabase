@@ -1,5 +1,5 @@
 // Force cache update by incrementing version
-const CACHE_VERSION = 'spliteasy-v2026020301'; // UI redesign with premium fintech design system
+const CACHE_VERSION = 'spliteasy-v2026021801'; // Share links + cache refresh for all devices
 const CACHE_NAME = CACHE_VERSION;
 
 console.log('🔄 SplitEasy Service Worker Loading with cache:', CACHE_NAME);
