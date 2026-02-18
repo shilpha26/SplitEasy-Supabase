@@ -2845,7 +2845,6 @@
             const url = `${SHARE_BASE_URL}/group-detail?id=${groupId}`;
             const groupName = currentGroup?.name || 'Group';
             const safeGroupName = groupName.replace(/[^a-zA-Z0-9\s]/g, '').substring(0, 30);
-            const shareText = `${safeGroupName} - Settlements\n${url}`;
             
             // Check if snapshot is ready
             if (!snapshotCanvas) {
@@ -2869,95 +2868,70 @@
                 });
             }
             
-            // Detect device type and browser
+            // Detect device type
             const ua = navigator.userAgent;
             const isAndroid = /Android/i.test(ua);
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
             const isMobile = isAndroid || isIOS || /webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            const isChrome = /Chrome/i.test(ua) && !/Edge/i.test(ua);
-            const isVivoBrowser = /VivoBrowser/i.test(ua) || (!isChrome && /vivo/i.test(ua));
             
-            console.log('Share attempt - Device:', { isAndroid, isIOS, isMobile, isChrome, isVivoBrowser, hasShare: !!navigator.share, hasCanShare: !!navigator.canShare });
+            console.log('Share attempt - Device:', { isAndroid, isIOS, isMobile, hasShare: !!navigator.share, hasCanShare: !!navigator.canShare });
             
-            const fileName = `${safeGroupName}-settlements.png`;
-            let file = null;
-            
-            try {
-                file = new File([snapshotBlob], fileName, { type: 'image/png' });
-            } catch (e) {
-                console.warn('File constructor failed, using Blob');
-            }
-            
-            // Strategy for mobile devices with Web Share API
-            if (isMobile && navigator.share && file) {
+            // Strategy 1: Try native file sharing (best experience)
+            if (isMobile && navigator.share && snapshotBlob) {
+                const fileName = `${safeGroupName}-settlements.png`;
                 
-                // For Vivo browser and other problematic browsers: Skip native share, go to fallback
-                if (isVivoBrowser) {
-                    console.log('Vivo browser detected - using fallback method');
-                    // Fall through to fallback strategy
-                } else {
-                    // Try sharing with image + text (best experience)
-                    const shareOptionsToTry = [
-                        // Option 1: File with text (includes both image and link)
-                        { files: [file], text: shareText },
-                        // Option 2: File with title and text
-                        { files: [file], title: safeGroupName, text: url },
-                        // Option 3: Just file (some devices work better this way)
-                        { files: [file] }
-                    ];
+                try {
+                    const file = new File([snapshotBlob], fileName, { type: 'image/png' });
                     
-                    for (const shareData of shareOptionsToTry) {
-                        try {
-                            // Check if this share option is supported
-                            if (navigator.canShare && !navigator.canShare(shareData)) {
-                                continue;
-                            }
-                            
-                            await navigator.share(shareData);
-                            showNotification('Shared successfully!', 'success');
-                            closeShareModal();
-                            return;
-                        } catch (error) {
-                            if (error.name === 'AbortError') return; // User cancelled
-                            console.warn('Share option failed:', error.message);
-                            // Continue to next option
-                        }
+                    // Check if file sharing is supported
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        // Try sharing file only (most compatible)
+                        await navigator.share({ files: [file] });
+                        showNotification('Shared successfully!', 'success');
+                        closeShareModal();
+                        return;
                     }
+                } catch (error) {
+                    if (error.name === 'AbortError') return; // User cancelled
+                    console.warn('File share failed:', error.message);
+                }
+                
+                // Strategy 2: Try sharing just URL/text (fallback for devices that don't support file sharing)
+                try {
+                    const textShareData = { 
+                        title: safeGroupName,
+                        text: `${safeGroupName} Settlements`,
+                        url: url 
+                    };
                     
-                    // If file sharing failed, try text-only share + save image separately
-                    try {
-                        const textOnlyShare = { title: safeGroupName, text: shareText };
-                        if (!navigator.canShare || navigator.canShare(textOnlyShare)) {
-                            await navigator.share(textOnlyShare);
-                            await saveImageToDevice(safeGroupName);
-                            showNotification('Link shared! Image saved to your device.', 'success');
-                            closeShareModal();
-                            return;
-                        }
-                    } catch (error) {
-                        if (error.name === 'AbortError') return;
-                        console.warn('Text-only share failed:', error.message);
+                    if (!navigator.canShare || navigator.canShare(textShareData)) {
+                        await navigator.share(textShareData);
+                        // Also save image to device
+                        await saveImageToDevice(safeGroupName);
+                        showNotification('Link shared! Image saved to device.', 'success');
+                        closeShareModal();
+                        return;
                     }
+                } catch (error) {
+                    if (error.name === 'AbortError') return;
+                    console.warn('Text share failed:', error.message);
                 }
             }
             
-            // Fallback Strategy: Save image + Copy link (works on ALL devices including Vivo browser)
-            console.log('Using fallback: save image + copy link');
-            
+            // Strategy 3: Fallback - Save image and copy link
             const imageSaved = await saveImageToDevice(safeGroupName);
             const linkCopied = await copyToClipboard(url);
             
             if (imageSaved && linkCopied) {
-                showNotification('✓ Image saved & link copied! Paste in WhatsApp/any app.', 'success');
+                showNotification('Image saved & link copied!', 'success');
             } else if (imageSaved) {
-                showNotification('✓ Image saved! Copy link: ' + url, 'success');
+                showNotification('Image saved! Long-press to copy link: ' + url, 'success');
             } else if (linkCopied) {
-                showNotification('✓ Link copied! Long-press image preview to save.', 'success');
+                showNotification('Link copied! Long-press image to save.', 'success');
             } else {
                 // Final fallback - show manual instructions
                 showManualShareInstructions(url);
             }
-            closeShareModal();
         }
         
         // Save image to device (works on all devices)
