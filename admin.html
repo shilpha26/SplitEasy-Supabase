@@ -53,14 +53,19 @@
             z-index: 100;
         }
         .admin-header-inner {
-            max-width: 1160px;
             width: 100%;
-            margin: 0 auto;
-            padding: 0 var(--space-6);
+            padding: 0 var(--space-4);
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+        @media (min-width: 769px) {
+            .admin-header-inner {
+                max-width: 1160px;
+                margin: 0 auto;
+                padding: 0 var(--space-6);
+            }
         }
         /* subtle shimmer line at bottom */
         .admin-header::after {
@@ -90,7 +95,7 @@
         }
         .header-app-name {
             font-size: var(--text-xl);
-            font-weight: 800;
+            font-weight: 600;
             color: #fff;
             letter-spacing: -0.03em;
             line-height: 1.1;
@@ -865,11 +870,20 @@
         /* --- Tablet (≤768px) --- */
         @media (max-width: 768px) {
             /* Header */
-            .admin-header { padding: 0 var(--space-4); height: 56px; }
+            .admin-header { height: auto; padding: var(--space-4) 0; }
+            .admin-header-inner { height: auto; padding: 0 var(--space-4); }
             .header-brand { gap: 8px; }
             .header-brand .brand-logo { height: 26px; }
-            .header-app-name { font-size: var(--text-xs); }
-            .header-admin-label { font-size: 9px; }
+            .header-app-name { font-size: var(--text-xl); }
+            .header-admin-label { font-size: var(--text-xs); letter-spacing: var(--tracking-wide); }
+            /* Compact pill for back-link, plain sign-out */
+            .admin-header .back-link {
+                padding: 6px 12px;
+                font-size: var(--text-xs);
+            }
+            .header-nav-divider { display: none; }
+            .admin-header .sign-out-link { font-size: var(--text-xs); padding: 6px 4px; }
+            .admin-header .header-nav { gap: var(--space-2); align-items: center; }
 
             /* Main container */
             .admin-main { padding: var(--space-5) var(--space-4); }
@@ -1098,12 +1112,9 @@
 
         /* --- Phone (≤480px) --- */
         @media (max-width: 480px) {
-            .admin-header { height: 52px; }
             .header-brand .brand-logo { height: 22px; }
             .header-brand { gap: 6px; }
-            .admin-header .back-link { padding: 6px 10px; font-size: var(--text-xs); }
-            .header-nav-divider { display: none; }
-            .admin-header .sign-out-link { font-size: var(--text-xs); padding: 6px 8px; }
+            .admin-header .sign-out-link { font-size: var(--text-xs); }
             .admin-main { padding: var(--space-4) var(--space-3); }
             .admin-stats {
                 grid-template-columns: repeat(2, 1fr);
@@ -1142,6 +1153,9 @@
 </head>
 <body>
     <div id="adminLoadingScreen" class="admin-loading-screen">
+        <div class="admin-loading-logo-wrap">
+            <img src="images/preview.png" alt="SplitXpense" onerror="this.style.display='none'">
+        </div>
         <div class="admin-loading-spinner"></div>
         <p id="adminLoadingMessage" class="admin-loading-message">Loading…</p>
     </div>
