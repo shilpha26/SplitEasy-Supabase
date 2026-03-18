@@ -13,4 +13,3 @@ if (typeof window !== 'undefined' && (typeof window.SUPABASECONFIG === 'undefine
 
 // Admin emails for /admin panel (who joined, total groups, etc.)
 window.ADMIN_EMAILS = ['saishilpha26@gmail.com'];
-

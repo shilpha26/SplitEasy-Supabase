@@ -42,15 +42,15 @@
 </head>
 <body>
     <!-- Loading Screen - no black bg, logo clear and not compressed -->
-    <div id="loadingScreen" class="loading-screen" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; background: linear-gradient(135deg, #f8fafc 0%, #ecfdf5 100%);">
+    <div id="loadingScreen" class="loading-screen" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; background: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%);">
         <div style="text-align: center; padding: 2rem;">
             <div class="loading-logo-wrap" style="margin-bottom: 1.5rem; background: transparent;">
                 <img src="images/logo.png" alt="SplitXpense" class="loading-logo-img" style="height: 160px; width: auto; min-width: 120px; max-width: 280px; margin: 0 auto; display: block; object-fit: contain; image-rendering: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <h1 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; margin: 0; display: none;">SplitXpense</h1>
-                <p style="color: #64748b; font-family: 'Inter', sans-serif; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500; letter-spacing: 0.025em;">Share expenses, split the cost</p>
+                <h1 style="font-family: var(--font-family); font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; margin: 0; display: none;">SplitXpense</h1>
+                <p style="color: var(--text-secondary); font-family: var(--font-family); font-size: var(--text-sm); margin-top: 0.5rem; font-weight: 500; letter-spacing: 0.025em;">Share expenses, split the cost</p>
             </div>
-            <div class="spinner" style="border: 3px solid #e2e8f0; border-top: 3px solid #22c55e; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto;"></div>
-            <p id="loadingMessage" style="margin-top: 1.25rem; color: #94a3b8; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 500;">Initializing...</p>
+            <div class="spinner" style="border: 3px solid var(--gray-200); border-top: 3px solid var(--primary-500); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto;"></div>
+            <p id="loadingMessage" style="margin-top: 1.25rem; color: var(--text-tertiary); font-family: var(--font-family); font-size: var(--text-sm); font-weight: 500;">Initializing...</p>
             <style>
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
@@ -140,7 +140,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="editUserEmail">Email</label>
-                    <input type="email" id="editUserEmail" readonly disabled style="background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+                    <input type="email" id="editUserEmail" readonly disabled style="background: var(--gray-100); color: var(--text-secondary); cursor: not-allowed;">
                 </div>
                 <div class="form-group">
                     <label for="editUserNameInput">Your Name</label>
@@ -163,8 +163,8 @@
             <div class="modal-body">
                 <div style="text-align: center; margin-bottom: 20px;">
                     <div style="font-size: 48px; margin-bottom: 10px;">📱💻</div>
-                    <p style="color: #1f2937; font-size: 16px; font-weight: 500; margin-bottom: 8px;">Sync across all your devices!</p>
-                    <p style="color: #64748b; font-size: 14px;">Enter your email to access your groups from any device - mobile, laptop, or tablet.</p>
+                    <p style="color: var(--text-primary); font-size: 16px; font-weight: 500; margin-bottom: 8px;">Sync across all your devices!</p>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Enter your email to access your groups from any device - mobile, laptop, or tablet.</p>
                 </div>
                 <div class="form-group">
                     <label for="migrationEmail">Your Email</label>
@@ -174,7 +174,7 @@
             </div>
             <div class="modal-footer" style="flex-direction: column; gap: 10px;">
                 <button type="button" class="btn-success" data-action="migrateToEmail" aria-label="Migrate account" style="width: 100%;">Upgrade Now</button>
-                <button type="button" class="btn-link" data-action="skipMigration" aria-label="Skip migration" style="color: #64748b;">Maybe later</button>
+                <button type="button" class="btn-link" data-action="skipMigration" aria-label="Skip migration" style="color: var(--text-secondary);">Maybe later</button>
             </div>
         </div>
     </div>
@@ -359,7 +359,7 @@
                 });
                 const retryBtn = DOMUtils.create('button', {
                     'data-action': 'reloadPage',
-                    style: 'padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;',
+                    style: 'padding: 0.5rem 1rem; background: var(--primary-600); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-family: var(--font-family); font-weight: 500;',
                     type: 'button'
                 }, 'Retry');
                 buttonContainer.appendChild(retryBtn);
@@ -406,7 +406,7 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
                 });
                 const retryBtn = DOMUtils.create('button', {
                     'data-action': 'reloadPage',
-                    style: 'padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;',
+                    style: 'padding: 0.5rem 1rem; background: var(--primary-600); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-family: var(--font-family); font-weight: 500;',
                     type: 'button'
                 }, 'Retry');
                 buttonContainer.appendChild(retryBtn);
@@ -448,7 +448,7 @@ updateLoadingMessage(`Connecting to Supabase... (${retries + 1}/5)`);
                 });
                 const refreshBtn = DOMUtils.create('button', {
                     'data-action': 'reloadPage',
-                    style: 'padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;',
+                    style: 'padding: 0.5rem 1rem; background: var(--primary-600); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-family: var(--font-family); font-weight: 500;',
                     type: 'button'
                 }, 'Refresh Page');
                 buttonContainer.appendChild(refreshBtn);

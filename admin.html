@@ -11,117 +11,255 @@
     <link rel="icon" href="images/logo.png" type="image/png">
     <meta name="theme-color" content="#22c55e">
     <style>
-        /* --- Page & layout --- */
+        /* ==========================================================
+           SplitXpense Admin — Command Center
+           Dark topbar · Colorful stat cards · Avatar rows
+           ========================================================== */
+        :root {
+            --adm-ink:    #0f172a;
+            --adm-indigo: #6366f1;
+            --adm-amber:  #f59e0b;
+        }
+
+        /* ---------- Page shell ---------- */
         .admin-page {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: var(--font-family);
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            background: var(--background);
+            min-height: 100vh;
+            background: #f1f5f9;
         }
+
+        /* ---------- Header ---------- */
         .admin-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: var(--space-4) var(--space-6);
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            box-shadow: var(--shadow-xs);
+            padding: 0 var(--space-6);
+            height: 64px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+            box-shadow: 0 2px 16px rgba(21, 128, 61, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        .admin-header h1 {
-            font-size: var(--text-xl);
+        /* subtle shimmer line at bottom */
+        .admin-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 40%, rgba(255,255,255,0.18) 60%, transparent 100%);
+        }
+
+        /* Left: brand area */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-brand .brand-logo {
+            height: 32px;
+            width: auto;
+            display: block;
+            flex-shrink: 0;
+        }
+        .header-brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .header-app-name {
+            font-size: var(--text-sm);
             font-weight: 700;
-            margin: 0;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
+            color: #fff;
+            letter-spacing: -0.01em;
+            line-height: 1;
+        }
+        .header-admin-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.65);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        /* Right: nav links */
+        .admin-header .header-nav {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
         }
         .admin-header .back-link {
             display: inline-flex;
             align-items: center;
-            gap: var(--space-1);
-            padding: var(--space-2) var(--space-3);
+            gap: 6px;
+            padding: 7px 14px;
             font-size: var(--text-sm);
             font-weight: 500;
-            color: var(--primary-600);
-            background: var(--primary-50);
-            border: 1px solid var(--primary-200);
-            border-radius: var(--radius-md);
+            color: #fff;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: var(--radius-full);
             text-decoration: none;
-            transition: color 0.15s, background 0.15s, border-color 0.15s;
+            transition: background 0.2s, border-color 0.2s;
+            backdrop-filter: blur(4px);
         }
         .admin-header .back-link:hover {
-            color: var(--primary-700);
-            background: var(--primary-100);
-            border-color: var(--primary-300);
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.35);
         }
         .admin-header .back-link:focus-visible {
-            outline: 2px solid var(--primary-500);
+            outline: 2px solid rgba(255,255,255,0.6);
             outline-offset: 2px;
         }
-        .admin-main {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: var(--space-6);
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        .header-nav-divider {
+            width: 1px;
+            height: 18px;
+            background: rgba(255,255,255,0.2);
+            margin: 0 var(--space-1);
+            flex-shrink: 0;
         }
-        #adminContent {
-            flex: 1;
-            min-height: 0;
-            min-width: 0;
-            overflow: auto;
+        .admin-header #adminHeaderLinks span {
+            display: none; /* replaced by .header-nav-divider */
+        }
+        .admin-header .sign-out-link {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: var(--radius-md);
+            transition: color 0.2s, background 0.2s;
+        }
+        .admin-header .sign-out-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
         }
 
-        /* --- Stats strip --- */
+        /* ---------- Main ---------- */
+        .admin-main {
+            max-width: 1160px;
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-6);
+            flex: 1;
+        }
+        #adminContent {
+            min-width: 0;
+        }
+
+        /* ---------- Stat cards ---------- */
         .admin-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-3);
-            margin-bottom: var(--space-6);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-5);
+            margin-bottom: var(--space-8);
         }
         .admin-stat {
-            flex: 1;
-            min-width: 120px;
             background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: var(--space-4) var(--space-5);
-            box-shadow: var(--shadow-sm);
-            transition: box-shadow 0.2s, border-color 0.2s;
+            border-radius: var(--radius-xl);
+            padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--space-4);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .admin-stat:hover {
-            border-color: var(--gray-200);
-            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
+        /* coloured left stripe */
+        .admin-stat::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+        }
+        .admin-stat.stat-users::before  { background: linear-gradient(180deg, var(--primary-400), var(--primary-600)); }
+        .admin-stat.stat-groups::before { background: linear-gradient(180deg, #818cf8, var(--adm-indigo)); }
+        .admin-stat.stat-exp::before    { background: linear-gradient(180deg, #fcd34d, var(--adm-amber)); }
+
+
+        /* Sub-label — visible on both desktop and mobile */
+        .admin-stat-sub {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            margin-top: 3px;
+        }
+
+        .admin-stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .stat-users  .admin-stat-icon { background: var(--primary-50);  color: var(--primary-600); }
+        .stat-groups .admin-stat-icon { background: #eef2ff;             color: var(--adm-indigo); }
+        .stat-exp    .admin-stat-icon { background: #fffbeb;             color: var(--adm-amber); }
+        .admin-stat-icon svg { width: 22px; height: 22px; }
+
+        .admin-stat-body { flex: 1; min-width: 0; }
         .admin-stat-value {
-            font-size: var(--text-2xl);
+            font-size: 1.875rem;
             font-weight: 800;
             color: var(--text-primary);
-            line-height: 1.2;
-            letter-spacing: -0.03em;
+            line-height: 1;
+            letter-spacing: -0.04em;
         }
-        .admin-stat-value.green { color: var(--primary-600); }
-        .admin-stat-value.red { color: var(--danger-500); }
         .admin-stat-label {
             font-size: var(--text-xs);
             color: var(--text-secondary);
-            margin-top: var(--space-1);
+            margin-top: 5px;
+            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
+            letter-spacing: 0.04em;
         }
 
-        /* --- Table --- */
+        /* ---------- Section bar (above table) ---------- */
+        .admin-section-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+        }
+        .admin-section-title {
+            font-size: var(--text-base);
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+        .admin-section-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 10px;
+            background: var(--primary-100);
+            color: var(--primary-700);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: 700;
+        }
+
+        /* ---------- Table ---------- */
         .admin-table-wrap {
             background: var(--surface);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-xl);
             overflow: hidden;
             border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-md);
         }
         .admin-table {
             width: 100%;
@@ -130,17 +268,17 @@
         }
         .admin-table th {
             text-align: left;
-            padding: var(--space-3) var(--space-4);
-            background: var(--gray-50);
+            padding: var(--space-3) var(--space-5);
+            background: #f8fafc;
             font-weight: 600;
-            font-size: var(--text-xs);
+            font-size: 11px;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.07em;
             border-bottom: 1px solid var(--border);
         }
         .admin-table td {
-            padding: var(--space-3) var(--space-4);
+            padding: var(--space-4) var(--space-5);
             border-bottom: 1px solid var(--border-subtle);
             color: var(--text-primary);
             vertical-align: middle;
@@ -149,101 +287,213 @@
         }
         .admin-table tbody tr {
             cursor: pointer;
-            transition: background-color 0.15s ease;
+            transition: background-color 0.15s;
         }
-        .admin-table tbody tr:hover:not(.expanded) {
-            background: var(--background-subtle);
+        .admin-table tbody tr:hover:not(.expanded) { background: #f8fafc; }
+        .admin-table tbody tr.expanded            { background: var(--primary-50); }
+        .admin-table tbody tr:last-child td       { border-bottom: none; }
+
+        /* Avatar + email/name stacked cell */
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
         }
-        .admin-table tbody tr.expanded {
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+        .user-avatar.av-green  { background: var(--primary-100);  color: var(--primary-700); }
+        .user-avatar.av-indigo { background: #e0e7ff;             color: #4338ca; }
+        .user-avatar.av-amber  { background: #fef3c7;             color: #b45309; }
+        .user-avatar.av-rose   { background: #ffe4e6;             color: #be123c; }
+        .user-info-primary {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow-wrap: break-word;
+            word-break: break-all;
+        }
+        .user-info-secondary {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            margin-top: 2px;
+            overflow-wrap: break-word;
+        }
+
+        /* Group count badge */
+        .group-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 24px;
+            padding: 0 8px;
             background: var(--primary-50);
+            color: var(--primary-700);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: 700;
+            border: 1px solid var(--primary-100);
         }
-        .admin-table tbody tr.expanded:hover {
-            background: var(--primary-50);
+        .group-badge.zero {
+            background: var(--gray-100);
+            color: var(--text-tertiary);
+            border-color: var(--gray-200);
         }
-        /* --- Expanded row (detail panel) --- */
+
+        /* Date badge */
+        .date-text {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* ---------- Expanded panel ---------- */
         .admin-table .expand-cell {
             padding: 0;
             vertical-align: top;
         }
         .admin-table .expand-cell .inner {
             display: flex;
+            align-items: stretch;
+            gap: 0;
+            background: var(--primary-50);
+            border-top: none;
+            border-bottom: 1px solid var(--primary-100);
+            animation: expandFadeIn 0.2s ease;
+        }
+        @keyframes expandFadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        /* Desktop: animated green left bar */
+        .expand-panel-accent {
+            width: 4px;
+            flex-shrink: 0;
+            background: var(--primary-500);
+            border-radius: 0;
+            transform-origin: top;
+            animation: accentSlideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes accentSlideDown {
+            from { transform: scaleY(0); }
+            to   { transform: scaleY(1); }
+        }
+        .expand-panel-body {
+            flex: 1;
+            display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: var(--space-5);
-            padding: var(--space-4) var(--space-5);
-            background: linear-gradient(to right, var(--primary-50) 0%, var(--surface) 100%);
-            border-left: 4px solid var(--primary-500);
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
+            gap: var(--space-8);
+            padding: var(--space-5) var(--space-6);
             min-width: 0;
-            overflow: visible;
+            position: relative;
         }
-        .admin-table .expand-cell .inner .expand-detail-left {
+        .expand-detail-left {
             flex: 1;
             min-width: 0;
-            overflow-wrap: break-word;
-            word-wrap: break-word;
         }
-        .admin-table .expand-cell .inner .groups-empty {
-            color: var(--text-tertiary);
-            font-size: var(--text-sm);
+        .expand-panel-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: var(--space-3);
         }
-        .admin-table .expand-cell .inner .groups-list {
+        .groups-list {
             margin: 0;
-            padding-left: var(--space-4);
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-2);
         }
-        .admin-table .expand-cell .inner .groups-list li {
-            margin: var(--space-1) 0;
-            color: var(--text-primary);
+        .groups-list li {
+            display: inline-block;
+            padding: 5px 12px;
             font-size: var(--text-sm);
+            font-weight: 500;
+            color: var(--primary-800);
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
+            border-radius: var(--radius-full);
             overflow-wrap: break-word;
-            word-wrap: break-word;
+            max-width: 100%;
         }
-        .admin-table .expand-cell .inner .expand-actions {
+        .groups-empty {
+            font-size: var(--text-sm);
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
+        /* Expand right side (actions + meta) */
+        .expand-panel-right {
             flex-shrink: 0;
-            align-self: flex-start;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: var(--space-3);
+            min-width: 120px;
         }
-        .admin-table .btn-delete-user {
+        .expand-panel-meta {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            text-align: right;
+            line-height: 1.5;
+        }
+        .btn-delete-user {
             display: inline-flex;
             align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-3);
+            gap: 6px;
+            padding: 7px 14px;
             font-size: var(--text-xs);
             font-weight: 600;
             color: var(--danger-600);
-            background: var(--surface);
-            border: 1px solid var(--danger-200);
-            border-radius: var(--radius-md);
+            background: var(--danger-50);
+            border: 1.5px solid var(--danger-200);
+            border-radius: var(--radius-full);
             cursor: pointer;
             white-space: nowrap;
-            box-shadow: var(--shadow-xs);
-            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            letter-spacing: 0.01em;
+            transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
         }
-        .admin-table .btn-delete-user:hover {
-            background: var(--danger-50);
-            border-color: var(--danger-300);
+        .btn-delete-user:hover {
+            background: var(--danger-100);
+            border-color: var(--danger-400);
             color: var(--danger-700);
+            box-shadow: 0 2px 8px rgba(185, 28, 28, 0.15);
         }
-        .admin-table .btn-delete-user:focus-visible {
+        .btn-delete-user:focus-visible {
             outline: 2px solid var(--danger-400);
             outline-offset: 2px;
         }
-        .admin-table .btn-delete-user svg {
-            width: 14px;
-            height: 14px;
+        .btn-delete-user svg {
+            width: 13px;
+            height: 13px;
             flex-shrink: 0;
-            opacity: 0.9;
         }
 
-        /* --- Messages --- */
+        /* ---------- Misc ---------- */
         .admin-msg {
-            padding: var(--space-4);
+            padding: var(--space-4) var(--space-5);
             background: var(--primary-50);
             border-radius: var(--radius-lg);
-            color: var(--text-secondary);
+            color: var(--primary-800);
             margin-bottom: var(--space-4);
             border: 1px solid var(--primary-200);
             font-size: var(--text-sm);
+            font-weight: 500;
         }
         .admin-error {
             background: var(--danger-50);
@@ -252,14 +502,14 @@
         }
         .admin-table .admin-empty-row {
             text-align: center;
-            padding: var(--space-8) var(--space-4);
+            padding: var(--space-16) var(--space-6);
         }
         .admin-table .admin-empty-text {
             font-size: var(--text-sm);
             color: var(--text-tertiary);
         }
 
-        /* --- Admin sign-in (login) page --- */
+        /* ---------- Sign-in ---------- */
         .admin-signin-wrap {
             height: 100%;
             min-height: 0;
@@ -267,30 +517,32 @@
             align-items: center;
             justify-content: center;
             padding: var(--space-6);
-            background: linear-gradient(180deg, var(--gray-50) 0%, var(--background) 100%);
+            background: #f1f5f9;
             overflow: hidden;
         }
         .admin-signin-card {
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-xl);
-            padding: var(--space-8) var(--space-6);
-            box-shadow: var(--shadow-lg);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-10) var(--space-8);
+            box-shadow: var(--shadow-xl);
+        }
+        .admin-signin-logo {
+            margin-bottom: var(--space-6);
         }
         .admin-signin-card h2 {
             margin: 0 0 var(--space-2);
             font-size: var(--text-2xl);
-            font-weight: 700;
+            font-weight: 800;
             color: var(--text-primary);
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
         }
         .admin-signin-card .admin-signin-subtitle {
             margin: 0 0 var(--space-8);
             font-size: var(--text-sm);
             color: var(--text-secondary);
-            line-height: 1.45;
+            line-height: 1.55;
         }
         .admin-signin-card .admin-field {
             margin-bottom: var(--space-5);
@@ -307,33 +559,31 @@
             height: 44px;
             padding: 0 var(--space-4);
             font-size: var(--text-base);
-            line-height: 44px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-lg);
             background: var(--surface);
             box-sizing: border-box;
-            transition: border-color 0.15s, box-shadow 0.15s;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: var(--font-family);
         }
-        .admin-signin-card .admin-input::placeholder {
-            color: var(--text-tertiary);
-        }
+        .admin-signin-card .admin-input::placeholder { color: var(--text-tertiary); }
         .admin-signin-card .admin-input:focus {
             outline: none;
             border-color: var(--primary-500);
-            box-shadow: 0 0 0 3px var(--primary-100);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
         }
         .admin-password-wrap {
             display: flex;
             align-items: center;
             height: 44px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-lg);
             background: var(--surface);
-            transition: border-color 0.15s, box-shadow 0.15s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .admin-password-wrap:focus-within {
             border-color: var(--primary-500);
-            box-shadow: 0 0 0 3px var(--primary-100);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
         }
         .admin-password-wrap input {
             flex: 1;
@@ -343,10 +593,10 @@
             padding: 0 var(--space-4);
             padding-right: var(--space-2);
             border: none;
-            border-radius: var(--radius-md);
             background: transparent;
             font-size: var(--text-base);
             box-sizing: border-box;
+            font-family: var(--font-family);
         }
         .admin-password-wrap input,
         .admin-password-wrap input:focus {
@@ -364,212 +614,49 @@
             background: none;
             cursor: pointer;
             color: var(--text-tertiary);
-            border-radius: 0 var(--radius-md) var(--radius-md) 0;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .admin-toggle-pw:hover { color: var(--text-secondary); }
         .admin-toggle-pw:focus-visible { outline: 2px solid var(--primary-500); outline-offset: -2px; }
-        .admin-toggle-pw svg {
-            width: 20px;
-            height: 20px;
-            display: block;
-        }
+        .admin-toggle-pw svg { width: 20px; height: 20px; display: block; }
         .admin-signin-card .btn-signin {
             width: 100%;
-            height: 44px;
-            margin-top: var(--space-2);
+            height: 46px;
+            margin-top: var(--space-3);
             padding: 0;
             font-size: var(--text-base);
-            font-weight: 600;
-            color: var(--text-inverse);
-            background: var(--primary-600);
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
             border: none;
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: background 0.15s;
+            letter-spacing: -0.01em;
+            transition: box-shadow 0.2s, filter 0.2s;
+            box-shadow: 0 2px 8px rgba(21, 128, 61, 0.3);
         }
-        .admin-signin-card .btn-signin:hover { background: var(--primary-700); }
-        .admin-signin-card .btn-signin:disabled { opacity: 0.7; cursor: not-allowed; }
+        .admin-signin-card .btn-signin:hover {
+            filter: brightness(1.05);
+            box-shadow: 0 4px 14px rgba(21, 128, 61, 0.4);
+        }
+        .admin-signin-card .btn-signin:disabled { opacity: 0.55; cursor: not-allowed; }
         .admin-signin-status {
             margin-top: var(--space-4);
             font-size: var(--text-sm);
             min-height: 1.25rem;
             line-height: 1.4;
         }
-        .admin-signin-status.error { color: var(--danger-600); }
+        .admin-signin-status.error   { color: var(--danger-600); }
         .admin-signin-status.success { color: var(--primary-600); }
         @media (max-height: 560px) {
-            .admin-signin-card { padding: var(--space-4) var(--space-5); }
-            .admin-signin-card .admin-signin-subtitle { margin-bottom: var(--space-4); }
+            .admin-signin-card { padding: var(--space-5) var(--space-6); }
+            .admin-signin-card .admin-signin-subtitle { margin-bottom: var(--space-5); }
             .admin-signin-card .admin-field { margin-bottom: var(--space-3); }
         }
 
-        /* --- Mobile: card layout (no horizontal scroll) --- */
-        @media (max-width: 768px) {
-            .admin-header {
-                padding: var(--space-3) var(--space-4);
-                flex-wrap: wrap;
-                gap: var(--space-2);
-            }
-            .admin-header h1 { font-size: var(--text-lg); }
-            .admin-main { padding: var(--space-4); }
-            .admin-stats {
-                gap: var(--space-2);
-                margin-bottom: var(--space-4);
-            }
-            .admin-stat {
-                min-width: 0;
-                padding: var(--space-3) var(--space-4);
-            }
-            .admin-stat-value { font-size: var(--text-xl); }
-            .admin-table-wrap {
-                width: 100%;
-                max-width: 100%;
-                overflow: visible;
-                border-radius: var(--radius-md);
-                border: 1px solid var(--border);
-                background: var(--surface);
-                box-shadow: var(--shadow-sm);
-            }
-            .admin-table {
-                display: block;
-                font-size: var(--text-sm);
-                min-width: 0;
-            }
-            .admin-table thead { display: none; }
-            .admin-table tbody { display: block; }
-            .admin-table tbody tr {
-                display: block;
-                padding: var(--space-3) var(--space-4);
-                border-bottom: 1px solid var(--border-subtle);
-                background: transparent;
-            }
-            .admin-table tbody tr:last-child {
-                border-bottom: none;
-            }
-            .admin-table tbody tr.expanded {
-                background: var(--primary-50);
-            }
-            .admin-table tbody tr.expand-row {
-                margin-top: 0;
-                padding: 0;
-                border: none;
-                border-bottom: 1px solid var(--border-subtle);
-                border-radius: 0;
-                overflow: hidden;
-                box-shadow: none;
-                background: var(--gray-50);
-            }
-            .admin-table tbody tr.expand-row:last-child {
-                border-bottom: none;
-            }
-            .admin-table tbody tr:not(.expand-row) td {
-                display: block;
-                padding: var(--space-1) 0;
-                border: none;
-                min-width: 0;
-                overflow-wrap: break-word;
-                word-break: break-word;
-            }
-            .admin-table tbody tr:not(.expand-row) td:first-child { padding-top: 0; }
-            .admin-table tbody tr:not(.expand-row) td:last-child { padding-bottom: 0; }
-            .admin-table tbody tr:not(.expand-row) td:nth-child(1)::before { content: 'Email: '; }
-            .admin-table tbody tr:not(.expand-row) td:nth-child(2)::before { content: 'Name: '; }
-            .admin-table tbody tr:not(.expand-row) td:nth-child(3)::before { content: 'Joined: '; }
-            .admin-table tbody tr:not(.expand-row) td:nth-child(4)::before { content: 'Groups: '; }
-            .admin-table tbody tr:not(.expand-row) td::before {
-                display: inline-block;
-                font-weight: 600;
-                font-size: var(--text-xs);
-                color: var(--text-secondary);
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                min-width: 4.5em;
-                margin-right: var(--space-2);
-            }
-            .admin-table tbody tr.expand-row td::before {
-                content: none;
-                display: none;
-            }
-            .admin-table .expand-cell {
-                display: block;
-                padding: 0;
-            }
-            .admin-table .expand-cell .inner {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0;
-                padding: var(--space-3) var(--space-4);
-                min-width: 0;
-                box-sizing: border-box;
-                border-left: none;
-                border-top: 1px solid var(--border);
-                background: var(--gray-50);
-            }
-            .admin-table .expand-cell .inner .expand-detail-left {
-                min-width: 0;
-                order: 1;
-                padding-bottom: var(--space-3);
-            }
-            .admin-table .expand-cell .inner .groups-empty {
-                color: var(--text-tertiary);
-                font-size: var(--text-sm);
-            }
-            .admin-table .expand-cell .inner .groups-list {
-                margin: 0;
-                padding-left: var(--space-4);
-                list-style: disc;
-            }
-            .admin-table .expand-cell .inner .groups-list li {
-                margin: var(--space-1) 0 0;
-                line-height: 1.35;
-            }
-            .admin-table .expand-cell .inner .groups-list li:first-child {
-                margin-top: 0;
-            }
-            .admin-table .expand-cell .inner .expand-actions {
-                order: 2;
-                width: 100%;
-                padding-top: 0;
-            }
-            .admin-table .expand-cell .inner .btn-delete-user {
-                width: 100%;
-                justify-content: center;
-                min-height: 44px;
-                padding: var(--space-2) var(--space-4);
-                font-size: var(--text-sm);
-            }
-            .admin-table tr .admin-empty-row {
-                display: block;
-                padding: var(--space-6) var(--space-4);
-                text-align: center;
-            }
-            .admin-table tr .admin-empty-row::before { display: none; }
-            .admin-signin-wrap { padding: var(--space-4); }
-            .admin-signin-card { padding: var(--space-6) var(--space-4); }
-        }
-        @media (max-width: 480px) {
-            .admin-header { padding: var(--space-2) var(--space-3); }
-            .admin-header .back-link { padding: var(--space-1) var(--space-2); font-size: var(--text-xs); }
-            .admin-main { padding: var(--space-3); }
-            .admin-stat-value { font-size: var(--text-lg); }
-            .admin-table tbody tr { padding: var(--space-2) var(--space-3); }
-            .admin-table .expand-cell .inner { padding: var(--space-2) var(--space-3); }
-            .admin-table .expand-cell .inner .expand-detail-left { padding-bottom: var(--space-2); }
-            .admin-signin-card { padding: var(--space-5) var(--space-3); }
-            .admin-signin-card h2 { font-size: var(--text-xl); }
-        }
-
-        .admin-header .sign-out-link {
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
-            text-decoration: none;
-        }
-        .admin-header .sign-out-link:hover { color: var(--text-primary); }
-
-        /* Admin loading screen – logo + spinner until ready */
+        /* ---------- Loading screen ---------- */
         .admin-loading-screen {
             position: fixed;
             inset: 0;
@@ -577,31 +664,26 @@
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            background: linear-gradient(135deg, var(--gray-50) 0%, var(--background) 100%);
+            background: linear-gradient(145deg, var(--primary-600) 0%, var(--primary-700) 60%, var(--primary-800) 100%);
             z-index: 9999;
         }
-        .admin-loading-screen.hidden {
-            display: none;
-        }
+        .admin-loading-screen.hidden { display: none; }
         .admin-loading-logo-wrap {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
         .admin-loading-logo-wrap img {
-            height: 120px;
+            height: 100px;
             width: auto;
-            min-width: 100px;
-            max-width: 220px;
+            max-width: 200px;
             display: block;
             margin: 0 auto;
             object-fit: contain;
         }
-        .admin-loading-logo-wrap img[data-fallback] {
-            display: none;
-        }
+        .admin-loading-logo-wrap img[data-fallback] { display: none; }
         .admin-loading-spinner {
-            border: 3px solid var(--border);
-            border-top-color: var(--primary-500);
+            border: 3px solid rgba(255,255,255,0.25);
+            border-top-color: #fff;
             border-radius: 50%;
             width: 36px;
             height: 36px;
@@ -609,19 +691,441 @@
         }
         .admin-loading-message {
             margin-top: 1.25rem;
-            color: var(--text-tertiary);
+            color: rgba(255,255,255,0.65);
             font-size: var(--text-sm);
             font-weight: 500;
+            letter-spacing: 0.01em;
         }
-        @keyframes admin-spin {
-            to { transform: rotate(360deg); }
+        @keyframes admin-spin { to { transform: rotate(360deg); } }
+
+        /* ---------- Analytics section ---------- */
+        /* Tab bar — hidden on desktop, shown on mobile */
+        .analytics-tab-bar {
+            display: none;
+        }
+
+        .admin-analytics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-5);
+            margin-bottom: var(--space-8);
+        }
+        .admin-chart-card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        /* subtle top accent stripe */
+        .admin-chart-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        }
+        .admin-chart-card.chart-signups::before { background: linear-gradient(90deg, var(--primary-500), var(--primary-400)); }
+        .admin-chart-card.chart-dist::before    { background: linear-gradient(90deg, var(--adm-indigo), #818cf8); }
+        .admin-chart-card.chart-top::before     { background: linear-gradient(90deg, var(--adm-amber), #fcd34d); }
+
+        .admin-chart-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: var(--space-5);
+            gap: var(--space-3);
+        }
+        .admin-chart-title {
+            font-size: var(--text-xs);
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            line-height: 1.3;
+        }
+        .admin-chart-subtitle {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        .admin-chart-kpi {
+            font-size: var(--text-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .admin-chart-kpi-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            margin-top: 3px;
+            text-align: right;
+        }
+        .admin-chart-wrap {
+            position: relative;
+            flex: 1;
+            min-height: 150px;
+        }
+
+        /* Top users list */
+        .top-users-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        .top-user-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        .top-user-rank {
+            width: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .top-user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .top-user-info { flex: 1; min-width: 0; }
+        .top-user-name {
+            font-size: var(--text-xs);
+            font-weight: 600;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .top-user-bar-wrap {
+            flex: 0 0 80px;
+            height: 6px;
+            background: var(--gray-100);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .top-user-bar {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--adm-amber), #fcd34d);
+            transition: width 0.4s ease;
+        }
+        .top-user-count {
+            font-size: var(--text-xs);
+            font-weight: 700;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            width: 18px;
+            text-align: right;
+        }
+
+        /* Scrollbar handled globally in css/style.css */
+
+        /* =========================================
+           RESPONSIVE — Mobile-first redesign
+           ========================================= */
+
+        /* --- Tablet (≤768px) --- */
+        @media (max-width: 768px) {
+            /* Header */
+            .admin-header { padding: 0 var(--space-4); height: 56px; }
+            .header-brand { gap: 8px; }
+            .header-brand .brand-logo { height: 26px; }
+            .header-app-name { font-size: var(--text-xs); }
+            .header-admin-label { font-size: 9px; }
+
+            /* Main container */
+            .admin-main { padding: var(--space-5) var(--space-4); }
+
+            /* Analytics — tabbed panel on mobile */
+            .analytics-tab-bar {
+                display: flex;
+                background: var(--surface);
+                border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+                padding: var(--space-1);
+                gap: 4px;
+                box-shadow: var(--shadow-md);
+                overflow: hidden;
+                border-bottom: 1px solid var(--border-subtle);
+            }
+            .atab {
+                flex: 1;
+                height: 38px;
+                border: none;
+                background: none;
+                border-radius: var(--radius-lg);
+                font-family: var(--font-family);
+                font-size: var(--text-xs);
+                font-weight: 600;
+                color: var(--text-tertiary);
+                cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                white-space: nowrap;
+            }
+            .atab.active {
+                background: var(--primary-50);
+                color: var(--primary-700);
+            }
+            .atab svg { flex-shrink: 0; }
+            .admin-analytics {
+                grid-template-columns: 1fr;
+                gap: 0;
+                margin-bottom: var(--space-4);
+            }
+            /* All chart cards hidden by default; JS adds .tab-active to show one */
+            .admin-chart-card { display: none; }
+            .admin-chart-card.tab-active {
+                display: flex;
+                border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+                box-shadow: var(--shadow-md);
+                padding: var(--space-4);
+            }
+            /* Remove top accent stripe on mobile — replaced by tab bar */
+            .admin-chart-card.tab-active::before { display: none; }
+            .admin-chart-header { margin-bottom: var(--space-3); }
+            .admin-chart-wrap { min-height: 200px; }
+            .admin-chart-kpi { font-size: var(--text-lg); }
+            .top-user-bar-wrap { flex: 0 0 60px; }
+            .top-users-list { gap: 10px; }
+
+            /* Stats — 2 column grid, 3rd card spans full width */
+            .admin-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--space-3);
+                margin-bottom: var(--space-5);
+            }
+            .admin-stat { padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); gap: var(--space-3); }
+            .admin-stat-icon { width: 38px; height: 38px; }
+            .admin-stat-icon svg { width: 19px; height: 19px; }
+            .admin-stat-value { font-size: var(--text-xl); }
+            .admin-stat-label { font-size: 10px; letter-spacing: 0.03em; }
+            .admin-stat-sub { font-size: 10px; }
+            /* Expenses card — intentional full-width feature row */
+            .admin-stat.stat-exp {
+                grid-column: 1 / -1;
+                align-items: center;
+                padding: var(--space-3) var(--space-4);
+            }
+            .admin-stat.stat-exp .admin-stat-icon { width: 44px; height: 44px; }
+            .admin-stat.stat-exp .admin-stat-value { font-size: var(--text-2xl); }
+            .admin-stat.stat-exp .admin-stat-body {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: var(--space-3);
+                flex-wrap: wrap;
+            }
+            .admin-stat.stat-exp .admin-stat-label { margin-top: 0; }
+            .admin-stat.stat-exp .admin-stat-sub {
+                margin-top: 0;
+                margin-left: auto;
+            }
+
+            /* Section bar */
+            .admin-section-bar { margin-bottom: var(--space-3); }
+
+            /* Table container */
+            .admin-table-wrap { border-radius: var(--radius-lg); }
+            .admin-table { display: block; min-width: 0; }
+            .admin-table thead { display: none; }
+            .admin-table tbody { display: block; }
+
+            /* Each user row — flex card layout */
+            .admin-table tbody tr:not(.expand-row) {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: var(--space-2);
+                padding: var(--space-4) var(--space-4) var(--space-3);
+                border-bottom: 1px solid var(--border-subtle);
+                cursor: pointer;
+                position: relative;
+            }
+            .admin-table tbody tr:not(.expand-row):last-child { border-bottom: none; }
+            .admin-table tbody tr.expanded {
+                background: var(--primary-50);
+                border-bottom-color: var(--primary-100);
+            }
+
+            /* Tap chevron hint (top-right) */
+            .admin-table tbody tr:not(.expand-row)::after {
+                content: '›';
+                position: absolute;
+                right: var(--space-4);
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 18px;
+                color: var(--text-tertiary);
+                transition: color 0.15s, transform 0.2s;
+                line-height: 1;
+            }
+            .admin-table tbody tr.expanded::after {
+                color: var(--primary-500);
+                transform: translateY(-50%) rotate(90deg);
+            }
+
+            /* td resets */
+            .admin-table tbody tr:not(.expand-row) td {
+                border: none;
+                padding: 0;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+
+            /* First td — user cell: flex 1, leave room for badge + chevron */
+            .admin-table tbody tr:not(.expand-row) td:nth-child(1) {
+                flex: 1 1 0;
+                min-width: 0;
+                padding-right: var(--space-2);
+            }
+
+            /* Second td — date: hide on mobile, shown in expand panel */
+            .admin-table tbody tr:not(.expand-row) td:nth-child(2) {
+                display: none;
+            }
+
+            /* Third td — group badge: sits right of user info */
+            .admin-table tbody tr:not(.expand-row) td:nth-child(3) {
+                flex: 0 0 auto;
+                padding-right: var(--space-5);
+            }
+
+            /* Expand row */
+            .admin-table tbody tr.expand-row {
+                display: block;
+                padding: 0;
+                border-bottom: 1px solid var(--primary-100);
+                background: var(--primary-50);
+            }
+            .admin-table tbody tr.expand-row:last-child { border-bottom: none; }
+            .admin-table tbody tr.expand-row td::before { content: none; display: none; }
+
+            /* Expand panel */
+            .admin-table .expand-cell { display: block; padding: 0; }
+            .expand-panel-accent { display: none; }
+            .expand-panel-body {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: var(--space-4);
+                padding: var(--space-4) var(--space-4);
+                border-top: none;
+                background: var(--primary-50);
+                overflow: hidden;
+            }
+            /* Mobile: animated green top line */
+            .expand-panel-body::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0;
+                height: 3px;
+                width: 100%;
+                background: linear-gradient(90deg, var(--primary-500) 0%, var(--primary-400) 100%);
+                transform-origin: left;
+                animation: lineSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 0 2px 2px 0;
+            }
+            @keyframes lineSlideIn {
+                from { transform: scaleX(0); }
+                to   { transform: scaleX(1); }
+            }
+            .expand-panel-right {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: var(--space-2);
+                min-width: auto;
+                flex-shrink: 0;
+            }
+            .expand-panel-meta {
+                text-align: right;
+                font-size: 11px;
+                color: var(--text-tertiary);
+                white-space: nowrap;
+            }
+            .btn-delete-user {
+                white-space: nowrap;
+            }
+
+            /* Empty state */
+            .admin-table tr .admin-empty-row { display: block; padding: var(--space-10) var(--space-4); text-align: center; }
+            .admin-table tr .admin-empty-row::before { display: none; }
+
+            /* Sign-in */
+            .admin-signin-wrap { padding: var(--space-4); }
+            .admin-signin-card { padding: var(--space-8) var(--space-5); }
+        }
+
+        /* --- Phone (≤480px) --- */
+        @media (max-width: 480px) {
+            .admin-header { height: 52px; }
+            .header-brand .brand-logo { height: 22px; }
+            .header-brand { gap: 6px; }
+            .admin-header .back-link { padding: 6px 10px; font-size: var(--text-xs); }
+            .header-nav-divider { display: none; }
+            .admin-header .sign-out-link { font-size: var(--text-xs); padding: 6px 8px; }
+            .admin-main { padding: var(--space-4) var(--space-3); }
+            .admin-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--space-2);
+                margin-bottom: var(--space-4);
+            }
+            .admin-stat { padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3); gap: var(--space-2); }
+            .admin-stat-icon { width: 32px; height: 32px; border-radius: var(--radius-md); }
+            .admin-stat-icon svg { width: 16px; height: 16px; }
+            .admin-stat-value { font-size: var(--text-lg); }
+            .admin-stat-label { font-size: 10px; margin-top: 3px; }
+            .admin-stat-sub { font-size: 10px; }
+            /* Keep expenses full-width card compact on tiny screens */
+            .admin-stat.stat-exp { padding: var(--space-3); }
+            .admin-stat.stat-exp .admin-stat-icon { width: 36px; height: 36px; }
+            .admin-stat.stat-exp .admin-stat-value { font-size: var(--text-xl); }
+            .admin-section-title { font-size: var(--text-sm); }
+            .user-avatar { width: 32px; height: 32px; font-size: 13px; }
+            .user-info-primary { font-size: var(--text-xs); }
+            .user-info-secondary { font-size: 11px; }
+            .expand-panel-body { padding: var(--space-3); gap: var(--space-3); }
+            .expand-panel-label { font-size: 10px; }
+            .groups-list li { font-size: 11px; padding: 4px 10px; }
+            .admin-signin-card { padding: var(--space-6) var(--space-4); }
+            .admin-signin-card h2 { font-size: var(--text-xl); }
+
+            /* Analytics — tighter on very small screens */
+            .atab { font-size: 11px; height: 36px; gap: 3px; }
+            .admin-chart-card.tab-active { padding: var(--space-3) var(--space-3) var(--space-4); }
+            .admin-chart-wrap { min-height: 180px; }
+            .top-user-bar-wrap { flex: 0 0 44px; }
+            .top-user-avatar { width: 26px; height: 26px; font-size: 11px; }
+            .top-user-name { font-size: 11px; }
         }
     </style>
 </head>
 <body>
     <div id="adminLoadingScreen" class="admin-loading-screen">
         <div class="admin-loading-logo-wrap">
-            <img src="images/logo.png" alt="SplitXpense" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
+            <img src="images/preview.png" alt="SplitXpense" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
             <span style="display: none; font-size: 1.5rem; font-weight: 800; color: var(--primary-600);">SplitXpense</span>
         </div>
         <div class="admin-loading-spinner"></div>
@@ -629,16 +1133,23 @@
     </div>
     <div class="admin-page" id="adminPageContent" style="display: none;">
         <div class="admin-header">
-            <h1>Admin</h1>
-            <span id="adminHeaderLinks">
+            <div class="header-brand">
+                <div class="header-brand-text">
+                    <span class="header-app-name">SplitXpense</span>
+                    <span class="header-admin-label">Admin Panel</span>
+                </div>
+            </div>
+            <div class="header-nav" id="adminHeaderLinks">
                 <a href="index.html" id="adminBackLink" class="back-link">← Back to app</a>
-            </span>
+            </div>
         </div>
         <div class="admin-main">
             <div id="adminContent"></div>
         </div>
+        <div data-app-footer></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/shared-supabase.js"></script>
@@ -662,6 +1173,149 @@
 
             var currentStats = null;
             var expandedIndex = -1;
+            var chartSignups = null;
+            var chartDist    = null;
+
+            /* ---- Analytics helpers ---- */
+            function getMonthlySignups(users, months) {
+                var now = new Date();
+                var buckets = [];
+                for (var i = months - 1; i >= 0; i--) {
+                    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    buckets.push({ label: d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }), key: key, count: 0 });
+                }
+                users.forEach(function(u) {
+                    var raw = u.created_at || u.createdAt;
+                    if (!raw) return;
+                    var d = new Date(raw);
+                    if (isNaN(d.getTime())) return;
+                    var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    var b = buckets.find(function(x) { return x.key === key; });
+                    if (b) b.count++;
+                });
+                return buckets;
+            }
+
+            function getGroupDist(users) {
+                var dist = [0, 0, 0, 0]; // 0, 1, 2, 3+
+                users.forEach(function(u) {
+                    var g = u.groupCount || 0;
+                    if (g === 0) dist[0]++;
+                    else if (g === 1) dist[1]++;
+                    else if (g === 2) dist[2]++;
+                    else dist[3]++;
+                });
+                return dist;
+            }
+
+            function getTopUsers(users, n) {
+                return users
+                    .filter(function(u) { return (u.groupCount || 0) > 0; })
+                    .sort(function(a, b) { return (b.groupCount || 0) - (a.groupCount || 0); })
+                    .slice(0, n);
+            }
+
+            function destroyCharts() {
+                if (chartSignups) { chartSignups.destroy(); chartSignups = null; }
+                if (chartDist)    { chartDist.destroy();    chartDist    = null; }
+            }
+
+            function initSignupsChart(stats) {
+                var users = stats.users || [];
+                var signupData = getMonthlySignups(users, 6);
+                var ctx = document.getElementById('chartSignups');
+                if (!ctx) return;
+                chartSignups = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: signupData.map(function(b) { return b.label; }),
+                        datasets: [{
+                            label: 'New users',
+                            data: signupData.map(function(b) { return b.count; }),
+                            backgroundColor: 'rgba(34,197,94,0.18)',
+                            borderColor: '#22c55e',
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return ' ' + c.parsed.y + ' user' + (c.parsed.y !== 1 ? 's' : ''); } } } },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' } },
+                            y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 }, color: '#94a3b8', stepSize: 1, precision: 0 }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            function initDistChart(stats) {
+                var users = stats.users || [];
+                var distData = getGroupDist(users);
+                var ctx = document.getElementById('chartDist');
+                if (!ctx) return;
+                chartDist = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['0 groups', '1 group', '2 groups', '3+ groups'],
+                        datasets: [{
+                            data: distData,
+                            backgroundColor: ['#e2e8f0', '#22c55e', '#6366f1', '#f59e0b'],
+                            borderWidth: 0,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 11 }, color: '#64748b', boxWidth: 10, padding: 12, usePointStyle: true, pointStyleWidth: 10 }
+                            },
+                            tooltip: { callbacks: { label: function(c) { return ' ' + c.label + ': ' + c.parsed + ' users'; } } }
+                        }
+                    }
+                });
+            }
+
+            function initCharts(stats) {
+                var isMobile = window.innerWidth <= 768;
+                if (isMobile) {
+                    /* On mobile only init the visible tab (signups = default active) */
+                    initSignupsChart(stats);
+                } else {
+                    initSignupsChart(stats);
+                    initDistChart(stats);
+                }
+            }
+
+            var activeTab = 'signups';
+            function switchAnalyticsTab(tab) {
+                if (activeTab === tab) return;
+                activeTab = tab;
+
+                /* Update tab button states */
+                document.querySelectorAll('.atab').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.tab === tab);
+                });
+
+                /* Show/hide panels */
+                document.querySelectorAll('[data-tab-panel]').forEach(function(p) {
+                    p.classList.toggle('tab-active', p.dataset.tabPanel === tab);
+                });
+
+                /* Destroy existing charts and init the one for the new tab */
+                destroyCharts();
+                if (!currentStats || typeof Chart === 'undefined') return;
+                if (tab === 'signups') initSignupsChart(currentStats);
+                if (tab === 'dist')    initDistChart(currentStats);
+                /* 'top' tab has no chart */
+            }
 
             function formatDateShort(iso) {
                 if (!iso) return '—';
@@ -671,48 +1325,147 @@
                 } catch (e) { return iso; }
             }
 
-            function render(stats) {
-                currentStats = stats;
+            var AV_COLORS = ['av-green', 'av-indigo', 'av-amber', 'av-rose'];
+            function avatarClass(i) { return AV_COLORS[i % AV_COLORS.length]; }
+            function avatarInitial(email, name) {
+                var s = (name && name !== '—') ? name : email;
+                return s ? s.charAt(0).toUpperCase() : '?';
+            }
+
+            /* ---- renderAnalytics: stat cards + charts (called once per data load) ---- */
+            function renderAnalytics(stats) {
                 var users = stats.users || [];
                 var totalGroups = stats.totalGroups != null ? stats.totalGroups : 0;
                 var totalExpenses = stats.totalExpenses != null ? stats.totalExpenses : 0;
-                var html = '';
-                html += '<div class="admin-stats">';
-                html += '<div class="admin-stat"><div class="admin-stat-value">' + users.length + '</div><div class="admin-stat-label">Total users</div></div>';
-                html += '<div class="admin-stat"><div class="admin-stat-value">' + totalGroups + '</div><div class="admin-stat-label">Total groups</div></div>';
-                html += '<div class="admin-stat"><div class="admin-stat-value">' + totalExpenses + '</div><div class="admin-stat-label">Total expenses</div></div>';
-                html += '</div>';
-                html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Email</th><th>Name</th><th>Joined</th><th>Groups</th></tr></thead><tbody>';
+
+                destroyCharts();
+
+                var iconUsers = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+                var iconGroups = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
+                var iconExp = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+
+                var newUsersThisMonth = (function() {
+                    var now = new Date();
+                    var key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                    return users.filter(function(u) {
+                        var raw = u.created_at || u.createdAt;
+                        if (!raw) return false;
+                        var d = new Date(raw);
+                        return !isNaN(d.getTime()) && (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === key;
+                    }).length;
+                })();
+                var avgGroupsPerUser = users.length ? (users.reduce(function(s, u) { return s + (u.groupCount || 0); }, 0) / users.length).toFixed(1) : '—';
+                var avgExpPerGroup = (totalGroups > 0) ? (totalExpenses / totalGroups).toFixed(1) : '—';
+                var topUsers = getTopUsers(users, 5);
+                var maxGroups = topUsers.length ? (topUsers[0].groupCount || 1) : 1;
+
+                var topListHtml = '';
+                if (topUsers.length === 0) {
+                    topListHtml = '<p style="font-size:var(--text-xs);color:var(--text-tertiary);text-align:center;padding:var(--space-4) 0;">No group activity yet</p>';
+                } else {
+                    topListHtml = '<ul class="top-users-list">';
+                    topUsers.forEach(function(u, i) {
+                        var avClass = avatarClass(i);
+                        var initial = avatarInitial(u.id || '', u.name || '');
+                        var label = (u.name && u.name !== '—') ? escapeHtml(u.name) : escapeHtml((u.id || '').split('@')[0]);
+                        var pct = Math.round(((u.groupCount || 0) / maxGroups) * 100);
+                        topListHtml += '<li class="top-user-row">' +
+                            '<span class="top-user-rank">' + (i + 1) + '</span>' +
+                            '<div class="top-user-avatar ' + avClass + '">' + escapeHtml(initial) + '</div>' +
+                            '<div class="top-user-info"><div class="top-user-name">' + label + '</div></div>' +
+                            '<div class="top-user-bar-wrap"><div class="top-user-bar" style="width:' + pct + '%"></div></div>' +
+                            '<span class="top-user-count">' + (u.groupCount || 0) + '</span>' +
+                            '</li>';
+                    });
+                    topListHtml += '</ul>';
+                }
+
+                var icoGrowth = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>';
+                var icoDist   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>';
+                var icoTop    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+
+                var ah = '';
+                ah += '<div class="admin-stats">';
+                ah += '<div class="admin-stat stat-users"><div class="admin-stat-icon">' + iconUsers + '</div><div class="admin-stat-body"><div class="admin-stat-value">' + users.length + '</div><div class="admin-stat-label">Total Users</div><div class="admin-stat-sub">' + newUsersThisMonth + ' this month</div></div></div>';
+                ah += '<div class="admin-stat stat-groups"><div class="admin-stat-icon">' + iconGroups + '</div><div class="admin-stat-body"><div class="admin-stat-value">' + totalGroups + '</div><div class="admin-stat-label">Total Groups</div><div class="admin-stat-sub">' + avgGroupsPerUser + ' avg / user</div></div></div>';
+                ah += '<div class="admin-stat stat-exp"><div class="admin-stat-icon">' + iconExp + '</div><div class="admin-stat-body"><div class="admin-stat-value">' + totalExpenses + '</div><div class="admin-stat-label">Total Expenses</div><div class="admin-stat-sub">' + avgExpPerGroup + ' avg / group</div></div></div>';
+                ah += '</div>';
+                ah += '<div class="admin-analytics">';
+                ah += '<div class="analytics-tab-bar">';
+                ah += '<button class="atab active" data-tab="signups">' + icoGrowth + ' Growth</button>';
+                ah += '<button class="atab" data-tab="dist">' + icoDist + ' Distribution</button>';
+                ah += '<button class="atab" data-tab="top">' + icoTop + ' Top Users</button>';
+                ah += '</div>';
+                ah += '<div class="admin-chart-card chart-signups tab-active" data-tab-panel="signups">';
+                ah += '<div class="admin-chart-header"><div><div class="admin-chart-title">User Growth</div><div class="admin-chart-subtitle">New signups · last 6 months</div></div>';
+                ah += '<div><div class="admin-chart-kpi">' + newUsersThisMonth + '</div><div class="admin-chart-kpi-label">this month</div></div></div>';
+                ah += '<div class="admin-chart-wrap"><canvas id="chartSignups"></canvas></div></div>';
+                ah += '<div class="admin-chart-card chart-dist" data-tab-panel="dist">';
+                ah += '<div class="admin-chart-header"><div><div class="admin-chart-title">Group Distribution</div><div class="admin-chart-subtitle">Users by number of groups</div></div>';
+                ah += '<div><div class="admin-chart-kpi">' + avgGroupsPerUser + '</div><div class="admin-chart-kpi-label">avg / user</div></div></div>';
+                ah += '<div class="admin-chart-wrap"><canvas id="chartDist"></canvas></div></div>';
+                ah += '<div class="admin-chart-card chart-top" data-tab-panel="top">';
+                ah += '<div class="admin-chart-header"><div><div class="admin-chart-title">Most Active Users</div><div class="admin-chart-subtitle">Ranked by group count</div></div></div>';
+                ah += topListHtml + '</div>';
+                ah += '</div>';
+
+                var analyticsEl = document.getElementById('adminAnalyticsSection');
+                analyticsEl.innerHTML = ah;
+
+                activeTab = 'signups';
+                if (typeof Chart !== 'undefined') initCharts(stats);
+
+                document.querySelectorAll('.atab').forEach(function(btn) {
+                    btn.addEventListener('click', function() { switchAnalyticsTab(btn.dataset.tab); });
+                });
+            }
+
+            /* ---- renderTable: section bar + user table only (called on every expand/collapse) ---- */
+            function renderTable(stats) {
+                var users = stats.users || [];
+                var th = '';
+                th += '<div class="admin-section-bar"><span class="admin-section-title">All Users</span><span class="admin-section-count">' + users.length + '</span></div>';
+                th += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>User</th><th>Joined</th><th>Groups</th></tr></thead><tbody>';
                 users.forEach(function(u, i) {
                     var id = (u.id != null) ? String(u.id) : '—';
                     var name = (u.name != null) ? String(u.name) : '—';
                     var created = u.created_at != null ? u.created_at : (u.createdAt != null ? u.createdAt : '');
                     var groups = u.groupCount != null ? u.groupCount : 0;
                     var rowClass = expandedIndex === i ? 'expanded' : '';
-                    html += '<tr class="' + rowClass + '" data-user-index="' + i + '">';
-                    html += '<td>' + escapeHtml(id) + '</td><td>' + escapeHtml(name) + '</td><td>' + formatDateShort(created) + '</td><td>' + groups + '</td></tr>';
+                    var avClass = avatarClass(i);
+                    var avLetter = avatarInitial(id, name);
+                    var badgeClass = groups === 0 ? 'group-badge zero' : 'group-badge';
+                    th += '<tr class="' + rowClass + '" data-user-index="' + i + '">';
+                    th += '<td><div class="user-cell"><div class="user-avatar ' + avClass + '">' + escapeHtml(avLetter) + '</div><div><div class="user-info-primary">' + escapeHtml(id) + '</div><div class="user-info-secondary">' + escapeHtml(name) + '</div></div></div></td>';
+                    th += '<td><span class="date-text">' + formatDateShort(created) + '</span></td>';
+                    th += '<td><span class="' + badgeClass + '">' + groups + '</span></td>';
+                    th += '</tr>';
                     if (expandedIndex === i) {
                         var groupNames = u.groupNames || [];
                         var trashSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-                        html += '<tr class="expand-row"><td colspan="4" class="expand-cell"><div class="inner">';
-                        html += '<div class="expand-detail-left">';
-                        if (groupNames.length === 0) html += '<span class="groups-empty">None</span>';
-                        else html += '<ul class="groups-list">' + groupNames.map(function(n) { return '<li>' + escapeHtml(n) + '</li>'; }).join('') + '</ul>';
-                        html += '</div>';
-                        html += '<div class="expand-actions"><button type="button" class="btn-delete-user" data-user-index="' + i + '" title="Delete user" aria-label="Delete user">' + trashSvg + ' Delete</button></div>';
-                        html += '</div></td></tr>';
+                        var groupsHtml = groupNames.length === 0
+                            ? '<span class="groups-empty">No groups yet</span>'
+                            : '<ul class="groups-list">' + groupNames.map(function(n) { return '<li>' + escapeHtml(n) + '</li>'; }).join('') + '</ul>';
+                        th += '<tr class="expand-row"><td colspan="3" class="expand-cell">';
+                        th += '<div class="inner"><div class="expand-panel-accent"></div><div class="expand-panel-body">';
+                        th += '<div class="expand-detail-left"><p class="expand-panel-label">Groups</p>' + groupsHtml + '</div>';
+                        th += '<div class="expand-panel-right"><div class="expand-panel-meta">Member since ' + formatDateShort(created) + '</div>';
+                        th += '<div class="expand-actions"><button type="button" class="btn-delete-user" data-user-index="' + i + '" title="Delete user" aria-label="Delete user">' + trashSvg + ' Delete user</button></div>';
+                        th += '</div></div></div></td></tr>';
                     }
                 });
-                if (users.length === 0) html += '<tr><td colspan="4" class="admin-empty-row"><span class="admin-empty-text">No users yet, or RLS is blocking admin read.</span></td></tr>';
-                html += '</tbody></table></div>';
-                content.innerHTML = html;
+                if (users.length === 0) th += '<tr><td colspan="3" class="admin-empty-row"><span class="admin-empty-text">No users yet, or RLS is blocking admin read.</span></td></tr>';
+                th += '</tbody></table></div>';
+
+                document.getElementById('adminTableSection').innerHTML = th;
+
                 document.querySelectorAll('.admin-table tbody tr:not(.expand-row)').forEach(function(el) {
                     if (el.classList.contains('expand-row')) return;
                     el.addEventListener('click', function() {
                         var idx = parseInt(el.getAttribute('data-user-index'), 10);
                         if (isNaN(idx)) return;
                         expandedIndex = expandedIndex === idx ? -1 : idx;
-                        render(currentStats);
+                        renderTable(currentStats); /* only table, charts untouched */
                     });
                 });
                 document.querySelectorAll('.btn-delete-user').forEach(function(btn) {
@@ -756,6 +1509,15 @@
                 });
             }
 
+            /* ---- render: full page (called on initial load or after delete) ---- */
+            function render(stats) {
+                currentStats = stats;
+                /* Create the two permanent sub-containers once */
+                content.innerHTML = '<div id="adminAnalyticsSection"></div><div id="adminTableSection"></div>';
+                renderAnalytics(stats);
+                renderTable(stats);
+            }
+
             var ALLOWED_ADMIN_EMAIL = 'saishilpha26@gmail.com';
 
             function showSignInPage() {
@@ -766,8 +1528,9 @@
                 }
                 content.innerHTML = '<div class="admin-signin-wrap">' +
                     '<div class="admin-signin-card">' +
+                    '<div class="admin-signin-logo"><img src="images/preview.png" alt="SplitXpense" style="height:36px;width:auto;display:block;object-fit:contain;" onerror="this.style.display=\'none\'"></div>' +
                     '<h2>Admin sign in</h2>' +
-                    '<p class="admin-signin-subtitle">Sign in with your admin email and password to manage users and data.</p>' +
+                    '<p class="admin-signin-subtitle">Restricted area. Sign in with your admin credentials to manage users and data.</p>' +
                     '<form id="adminSignInForm">' +
                     '<div class="admin-field">' +
                     '<label for="adminEmail">Email</label>' +
@@ -852,7 +1615,7 @@
                 hideAdminLoading();
                 var linksEl = document.getElementById('adminHeaderLinks');
                 if (linksEl) {
-                    linksEl.innerHTML = '<a href="index.html" class="back-link">← Back to app</a> <span style="color:var(--border);margin:0 0.5rem;">|</span> <a href="#" id="adminSignOutLink" class="sign-out-link">Sign out</a>';
+                    linksEl.innerHTML = '<a href="index.html" class="back-link">← Back to app</a><span class="header-nav-divider"></span><a href="#" id="adminSignOutLink" class="sign-out-link">Sign out</a>';
                     var signOutLink = document.getElementById('adminSignOutLink');
                     if (signOutLink) {
                         signOutLink.addEventListener('click', function(e) {
@@ -908,5 +1671,6 @@
             }
         })();
     </script>
+    <script src="js/footer-component.js"></script>
 </body>
 </html>

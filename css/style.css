@@ -1637,10 +1637,14 @@ header .container {
 
 /* No settlements empty state */
 .no-settlements, .no-balances {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    padding: var(--space-10) var(--space-6);
     color: var(--text-tertiary);
-    padding: var(--space-8);
-    font-style: italic;
+    font-style: normal;
 }
 
 /* ============================================
@@ -2092,6 +2096,7 @@ header .container {
     border-radius: var(--radius-md);
     transition: all var(--transition-fast);
     text-align: center;
+    white-space: nowrap;
 }
 
 .tab-btn:hover {
@@ -2465,6 +2470,7 @@ a:focus-visible {
 
 .details-view {
     padding: var(--space-6) 0;
+    padding-top: var(--header-height);
     min-height: 100vh;
     background: var(--background);
 }
@@ -2869,6 +2875,11 @@ a:focus-visible {
         gap: var(--space-2);
     }
     
+    /* Details view – clear fixed header + tab bar on mobile */
+    .details-view {
+        padding-top: calc(var(--header-height) + 4.5rem);
+    }
+
     /* Tabs */
     .tab-navigation {
         margin: var(--space-4) 0;
@@ -2982,7 +2993,34 @@ a:focus-visible {
 }
 
 /* ============================================
-   25. PRINT STYLES
+   25. SCROLLBAR
+   ============================================ */
+
+/* Custom thin scrollbar — desktop only */
+@media (min-width: 769px) {
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: var(--gray-300);
+        border-radius: 99px;
+        transition: background 0.2s;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--primary-400); }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    body {
+        scrollbar-width: thin;
+        scrollbar-color: var(--gray-300) transparent;
+    }
+}
+
+/* Hide scrollbar on mobile */
+@media (max-width: 768px) {
+    ::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    body { scrollbar-width: none; -ms-overflow-style: none; }
+}
+
+/* ============================================
+   26. PRINT STYLES
    ============================================ */
 
 @media print {

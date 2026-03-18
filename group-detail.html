@@ -103,7 +103,7 @@
             <!-- Tab Navigation -->
             <div class="tab-navigation">
                 <button class="tab-btn active" id="balancesTab" onclick="switchTab('balances')">Lending / Borrowing</button>
-                <button class="tab-btn" id="expensesTab" onclick="switchTab('expenses')">Expense</button>
+                <button class="tab-btn" id="expensesTab" onclick="switchTab('expenses')">Expenses</button>
             </div>
 
             <!-- Balances Tab Content -->
@@ -1689,7 +1689,7 @@
 
             if (!balancesList || !currentGroup || !currentGroup.expenses || currentGroup.expenses.length === 0) {
                 if (balancesList) {
-                    balancesList.innerHTML = '<p class="no-settlements">No expenses to calculate settlements</p>';
+                    balancesList.innerHTML = '<div class="no-settlements"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px;color:var(--text-tertiary);margin-bottom:0.75rem"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><p style="font-weight:600;color:var(--text-secondary);margin:0 0 0.25rem">No settlements needed</p><p style="font-size:var(--text-sm);color:var(--text-tertiary);margin:0">Add expenses to see who owes what</p></div>';
                 }
                 return;
             }
