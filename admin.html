@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script>
+        // Auto-clear cache when someone opens the app (once per session, then reload for latest)
+        (function() {
+            if (sessionStorage.getItem('splitxpense_cache_cleared')) return;
+            if (!('caches' in window) && !('serviceWorker' in navigator)) return;
+            sessionStorage.setItem('splitxpense_cache_cleared', '1');
+            var unregister = 'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(regs) { return Promise.all(regs.map(function(r) { return r.unregister(); })); }) : Promise.resolve();
+            var clearCaches = 'caches' in window ? caches.keys().then(function(names) { return Promise.all(names.map(function(n) { return caches.delete(n); })); }) : Promise.resolve();
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+            Promise.all([unregister, clearCaches]).then(function() { window.location.reload(true); }).catch(function() { window.location.reload(true); });
+        })();
+    </script>
     <title>Admin - SplitXpense</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,10 +44,6 @@
 
         /* ---------- Header ---------- */
         .admin-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 var(--space-6);
             height: 64px;
             flex-shrink: 0;
             background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
@@ -43,6 +51,16 @@
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+        .admin-header-inner {
+            max-width: 1160px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 var(--space-6);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         /* subtle shimmer line at bottom */
         .admin-header::after {
@@ -71,11 +89,11 @@
             gap: 2px;
         }
         .header-app-name {
-            font-size: var(--text-sm);
-            font-weight: 700;
+            font-size: var(--text-xl);
+            font-weight: 800;
             color: #fff;
-            letter-spacing: -0.01em;
-            line-height: 1;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
         }
         .header-admin-label {
             font-size: 10px;
@@ -1124,23 +1142,21 @@
 </head>
 <body>
     <div id="adminLoadingScreen" class="admin-loading-screen">
-        <div class="admin-loading-logo-wrap">
-            <img src="images/preview.png" alt="SplitXpense" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
-            <span style="display: none; font-size: 1.5rem; font-weight: 800; color: var(--primary-600);">SplitXpense</span>
-        </div>
         <div class="admin-loading-spinner"></div>
         <p id="adminLoadingMessage" class="admin-loading-message">Loading…</p>
     </div>
     <div class="admin-page" id="adminPageContent" style="display: none;">
         <div class="admin-header">
-            <div class="header-brand">
-                <div class="header-brand-text">
-                    <span class="header-app-name">SplitXpense</span>
-                    <span class="header-admin-label">Admin Panel</span>
+            <div class="admin-header-inner">
+                <div class="header-brand">
+                    <div class="header-brand-text">
+                        <span class="header-app-name">SplitXpense</span>
+                        <span class="header-admin-label">Admin Panel</span>
+                    </div>
                 </div>
-            </div>
-            <div class="header-nav" id="adminHeaderLinks">
-                <a href="index.html" id="adminBackLink" class="back-link">← Back to app</a>
+                <div class="header-nav" id="adminHeaderLinks">
+                    <a href="index.html" id="adminBackLink" class="back-link">← Back to app</a>
+                </div>
             </div>
         </div>
         <div class="admin-main">
@@ -1528,7 +1544,6 @@
                 }
                 content.innerHTML = '<div class="admin-signin-wrap">' +
                     '<div class="admin-signin-card">' +
-                    '<div class="admin-signin-logo"><img src="images/preview.png" alt="SplitXpense" style="height:36px;width:auto;display:block;object-fit:contain;" onerror="this.style.display=\'none\'"></div>' +
                     '<h2>Admin sign in</h2>' +
                     '<p class="admin-signin-subtitle">Restricted area. Sign in with your admin credentials to manage users and data.</p>' +
                     '<form id="adminSignInForm">' +
@@ -1672,5 +1687,59 @@
         })();
     </script>
     <script src="js/footer-component.js"></script>
+    <script>
+        // Service Worker registration with auto-update detection
+        if ('serviceWorker' in navigator) {
+            const basePath = window.location.pathname.split('/').slice(0, -1).join('/') || '';
+            const swPath = basePath ? `${basePath}/sw.js` : '/sw.js';
+
+            navigator.serviceWorker.register(swPath)
+                .then(registration => {
+                    // Poll for updates every 30 seconds
+                    setInterval(() => { registration.update(); }, 30000);
+
+                    // Auto-reload when a new version is installed
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                if (typeof showNotification === 'function') {
+                                    showNotification('App updated! Refreshing...', 'info');
+                                }
+                                setTimeout(() => { window.location.reload(); }, 2000);
+                            }
+                        });
+                    });
+                })
+                .catch(() => {});
+
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'SW_UPDATED') {
+                    if (typeof showNotification === 'function') {
+                        showNotification(event.data.message, 'success');
+                    }
+                }
+            });
+        }
+
+        window.clearCacheAndUpdate = function() {
+            const doReload = () => window.location.reload(true);
+            if (!('caches' in window) && !('serviceWorker' in navigator)) { doReload(); return; }
+            const unregister = 'serviceWorker' in navigator
+                ? navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister())))
+                : Promise.resolve();
+            const clearCaches = 'caches' in window
+                ? caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
+                : Promise.resolve();
+            navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_CACHE' });
+            Promise.all([unregister, clearCaches]).then(() => setTimeout(doReload, 600)).catch(() => setTimeout(doReload, 600));
+        };
+        window.clearAppCache = function() { window.clearCacheAndUpdate(); };
+        window.forceAppUpdate = function() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => reg.update().then(() => setTimeout(() => window.location.reload(true), 800)));
+            }
+        };
+    </script>
 </body>
 </html>
